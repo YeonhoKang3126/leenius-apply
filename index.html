@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>지원 의사 확인 | 리니어스</title>
+<style>
+  :root { --navy: #002d72; --blue: #0056b3; --line: #e3e7ee; --text: #333; --sub: #667; --bg: #f4f6fa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+  .head { background: var(--navy); color: #fff; border-radius: 12px 12px 0 0; padding: 20px; }
+  .head h1 { font-size: 19px; margin: 0 0 4px; }
+  .head p { margin: 0; font-size: 14px; opacity: .85; }
+  .card { background: #fff; border-radius: 0 0 12px 12px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
+  .q { margin: 0 0 22px; }
+  .q h2 { font-size: 15px; margin: 0 0 10px; }
+  .q h2 small { display: block; font-weight: 400; color: var(--sub); font-size: 13px; margin-top: 2px; }
+  .opt { display: block; width: 100%; text-align: left; padding: 13px 14px; margin: 0 0 8px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+  .opt.on { border-color: var(--blue); background: #eaf2ff; font-weight: 600; }
+  textarea { width: 100%; min-height: 72px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; resize: vertical; }
+  .submit { width: 100%; padding: 15px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .submit:disabled { background: #b8c4d6; cursor: default; }
+  .note { font-size: 13px; color: var(--sub); margin: 10px 0 0; text-align: center; }
+  .msg { text-align: center; padding: 30px 10px; }
+  .msg h2 { font-size: 18px; margin: 0 0 8px; color: var(--navy); }
+  .hidden { display: none; }
+  .err { color: #c0392b; font-size: 13px; text-align: center; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1 id="title">지원 의사 확인</h1>
+    <p id="sub">잠시만 기다려 주세요…</p>
+  </div>
+  <div class="card">
+    <div id="loading" class="msg"><p>불러오는 중…</p></div>
+
+    <div id="form" class="hidden">
+      <div class="q" data-key="intent">
+        <h2>1. 제안드린 포지션에 지원하시겠어요?</h2>
+        <button class="opt" data-v="apply">네, 지원하겠습니다</button>
+        <button class="opt" data-v="call">통화로 조금 더 듣고 결정하고 싶어요</button>
+        <button class="opt" data-v="decline">이번에는 지원하지 않겠습니다</button>
+      </div>
+
+      <div class="q hidden" data-key="resume">
+        <h2>2. 이력서는 어떻게 할까요?
+          <small>보내주신 이력서는 저희가 고객사 제출용 표준 이력서로 정리해 드립니다.</small></h2>
+        <button class="opt" data-v="saramin">사람인 이력서로 작성해 주세요</button>
+        <button class="opt" data-v="own">제 이력서를 따로 보내드릴게요</button>
+      </div>
+
+      <div class="q hidden" data-key="updated">
+        <h2>3. 사람인 이력서에 최신 경력이 반영되어 있나요?</h2>
+        <button class="opt" data-v="latest">네, 최신 상태입니다</button>
+        <button class="opt" data-v="needs_update">업데이트가 필요해요 (업데이트 후 알려드릴게요)</button>
+      </div>
+
+      <div class="q hidden" data-key="docs">
+        <h2 id="docsTitle">4. 추가 서류를 제출하실 수 있나요?</h2>
+        <button class="opt" data-v="yes">네, 제출할 수 있습니다</button>
+        <button class="opt" data-v="no">제출이 어렵습니다</button>
+      </div>
+
+      <div class="q" id="memoBox">
+        <h2>남기실 말씀 <small>선택 · 통화 가능한 시간, 궁금한 점 등</small></h2>
+        <textarea id="memo" maxlength="500"></textarea>
+      </div>
+
+      <button class="submit" id="submit" disabled>보내기</button>
+      <p class="err hidden" id="err"></p>
+      <p class="note">헤드헌터 강연호 이사에게 바로 전달됩니다.</p>
+    </div>
+
+    <div id="done" class="msg hidden">
+      <h2>감사합니다!</h2>
+      <p id="doneText"></p>
+      <p class="note">선택을 바꾸고 싶으시면 메일의 버튼을 다시 눌러 주세요.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// 응답 저장은 Supabase 서버 함수(sf-respond)가 담당. 이 페이지는 선택지만 보여 줌
+var API = 'https://qxcrtwtjhllsbgahfqvd.supabase.co/functions/v1/sf-respond';
+var CONTACT = 'jade.kang@leenius.com';
+var token = new URLSearchParams(location.search).get('t') || '';
+var answers = {};
+var extraDocs = '';
+
+function $(id) { return document.getElementById(id); }
+function show(el, on) { el.classList.toggle('hidden', !on); }
+function q(key) { return document.querySelector('.q[data-key="' + key + '"]'); }
+
+function visibleKeys() {
+  var keys = ['intent'];
+  if (answers.intent === 'apply') {
+    keys.push('resume');
+    if (answers.resume === 'saramin') keys.push('updated');
+    if (extraDocs) keys.push('docs');
+  }
+  return keys;
+}
+
+function refresh() {
+  ['resume', 'updated', 'docs'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  document.querySelectorAll('.q[data-key]').forEach(function(box) {
+    box.querySelectorAll('.opt').forEach(function(b) { b.classList.toggle('on', answers[box.dataset.key] === b.dataset.v); });
+  });
+  $('submit').disabled = !visibleKeys().every(function(k) { return answers[k]; });
+}
+
+document.querySelectorAll('.q[data-key] .opt').forEach(function(b) {
+  b.addEventListener('click', function() {
+    answers[b.closest('.q').dataset.key] = b.dataset.v;
+    refresh();
+  });
+});
+
+function doneMessage() {
+  if (answers.intent === 'decline') return '회신해 주셔서 감사합니다. 더 잘 맞는 기회가 생기면 다시 연락드리겠습니다.';
+  if (answers.intent === 'call') return '확인 후 곧 연락드리겠습니다.';
+  var parts = ['지원 의사를 확인했습니다. 서류 준비가 끝나면 진행 상황을 안내해 드리겠습니다.'];
+  if (answers.resume === 'own') parts.push('이력서는 ' + CONTACT + ' 로 보내 주세요.');
+  else if (answers.updated === 'needs_update') parts.push('사람인 이력서를 업데이트하신 뒤 메일 회신이나 문자로 알려 주세요.');
+  if (answers.docs === 'yes') parts.push('추가 서류(' + extraDocs + ')는 ' + CONTACT + ' 로 보내 주세요.');
+  return parts.join(' ');
+}
+
+$('submit').addEventListener('click', function() {
+  var payload = {};
+  visibleKeys().forEach(function(k) { payload[k] = answers[k]; });
+  payload.memo = $('memo').value;
+  $('submit').disabled = true;
+  $('submit').textContent = '보내는 중…';
+  show($('err'), false);
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, answers: payload }) })
+    .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
+    .then(function() {
+      $('doneText').textContent = doneMessage();
+      show($('form'), false);
+      show($('done'), true);
+    })
+    .catch(function() {
+      $('err').textContent = '전송에 실패했습니다. 잠시 후 다시 시도하시거나 ' + CONTACT + ' 로 회신 부탁드립니다.';
+      show($('err'), true);
+      $('submit').textContent = '보내기';
+      refresh();
+    });
+});
+
+function fail(text) {
+  $('sub').textContent = '';
+  $('loading').innerHTML = '';
+  var p = document.createElement('p');
+  p.textContent = text;
+  $('loading').appendChild(p);
+}
+
+if (!token) fail('링크가 올바르지 않습니다. 메일의 버튼을 다시 눌러 주세요.');
+else fetch(API + '?t=' + encodeURIComponent(token))
+  .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(function(d) {
+    $('title').textContent = d.position || '지원 의사 확인';
+    $('sub').textContent = d.name + ' 님, 아래 항목을 눌러 선택해 주세요. (1분이면 충분합니다)';
+    extraDocs = d.extraDocs || '';
+    if (extraDocs) $('docsTitle').textContent = '4. ' + extraDocs + '을(를) 제출하실 수 있나요?';
+    if (d.answers) {
+      answers = Object.assign({}, d.answers);
+      $('memo').value = d.answers.memo || '';
+      delete answers.memo;
+    }
+    show($('loading'), false);
+    show($('form'), true);
+    refresh();
+  })
+  .catch(function() { fail('링크를 확인할 수 없습니다. ' + CONTACT + ' 로 회신 부탁드립니다.'); });
+</script>
+</body>
+</html>
