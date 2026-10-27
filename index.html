@@ -37,6 +37,9 @@
   .slot li.ok::before { content: '✓ '; color: #4f7363; font-weight: 700; }
   .slot li.bad { color: #8a5a44; }
   .endbox { background: #f7f8fa; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 0 0 22px; font-size: 14px; }
+  .row { display: flex; gap: 8px; margin: 0 0 8px; }
+  select { flex: 1; min-width: 0; padding: 12px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font: inherit; color: inherit; }
+  select.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
   .close { margin-top: 14px; padding: 11px 22px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font: inherit; cursor: pointer; }
 </style>
 </head>
@@ -68,6 +71,23 @@
         <h2><span class="num"></span>사람인 이력서에 최신 경력이 반영되어 있나요?</h2>
         <button class="opt" data-v="latest">네, 최신 상태입니다</button>
         <button class="opt" data-v="needs_update">업데이트가 필요해요 (업데이트 후 알려드릴게요)</button>
+      </div>
+
+      <div class="q hidden" data-key="contact">
+        <h2><span class="num"></span>편하신 연락 방법을 골라 주세요</h2>
+        <button class="opt" data-v="call">전화</button>
+        <button class="opt" data-v="sms">문자</button>
+        <button class="opt" data-v="email">이메일</button>
+      </div>
+
+      <div class="q hidden" id="whenBox">
+        <h2><span class="num"></span>연락 가능한 시간을 알려 주세요
+          <small>고르신 시간에 맞춰 연락드리겠습니다.</small></h2>
+        <div class="row">
+          <select id="whenDate"><option value="">날짜</option></select>
+          <select id="whenTime"><option value="">시간</option></select>
+        </div>
+        <button class="opt" id="whenAny" type="button">언제든 괜찮아요</button>
       </div>
 
       <div class="q hidden" id="docsBox">
@@ -122,8 +142,51 @@ function visibleKeys() {
     keys.push('resume');
     if (answers.resume === 'saramin') keys.push('updated');
   }
+  if (answers.intent === 'apply' || answers.intent === 'call') keys.push('contact', 'when');
   return keys;
 }
+
+// 연락 가능한 시간: 오늘부터 2주, 오전 9시 ~ 오후 9시 30분 단위 → answers.when = 'YYYY-MM-DD HH:MM' 또는 'any'
+var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function buildWhenOptions() {
+  var today = new Date();
+  for (var i = 0; i < 14; i++) {
+    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    var o = document.createElement('option');
+    o.value = ymd(d);
+    o.textContent = (i === 0 ? '오늘 ' : i === 1 ? '내일 ' : '') + (d.getMonth() + 1) + '/' + d.getDate() + '(' + DAYS[d.getDay()] + ')';
+    $('whenDate').appendChild(o);
+  }
+  for (var m = 9 * 60; m <= 21 * 60; m += 30) {
+    var t = document.createElement('option');
+    var h = Math.floor(m / 60);
+    t.value = pad(h) + ':' + pad(m % 60);
+    t.textContent = (h < 12 ? '오전 ' : '오후 ') + (h > 12 ? h - 12 : h) + ':' + pad(m % 60);
+    $('whenTime').appendChild(t);
+  }
+}
+function syncWhen() {
+  var d = $('whenDate').value, t = $('whenTime').value;
+  // 오늘을 고르면 지난 시간은 고를 수 없게
+  var now = new Date(), isToday = d === ymd(now);
+  Array.prototype.forEach.call($('whenTime').options, function(o) {
+    if (!o.value) return;
+    var hm = o.value.split(':');
+    o.disabled = isToday && (+hm[0] * 60 + +hm[1]) <= now.getHours() * 60 + now.getMinutes();
+  });
+  if (t && $('whenTime').selectedOptions[0].disabled) { $('whenTime').value = ''; t = ''; }
+  if (d && t) answers.when = d + ' ' + t;
+  else if (answers.when !== 'any') delete answers.when;
+}
+$('whenDate').addEventListener('change', function() { if (answers.when === 'any') delete answers.when; syncWhen(); refresh(); });
+$('whenTime').addEventListener('change', function() { if (answers.when === 'any') delete answers.when; syncWhen(); refresh(); });
+$('whenAny').addEventListener('click', function() {
+  answers.when = 'any';
+  $('whenDate').value = ''; $('whenTime').value = '';
+  refresh();
+});
 
 // 올릴 서류 칸: 직접 보내면 이력서 + (오더의 추가 서류) + 기타, 사람인 이력서면 (추가 서류) + 기타
 //  자기소개서는 대부분 이력서 안에 들어 있으므로 따로 칸을 두지 않음
@@ -173,7 +236,12 @@ function renderSlots() {
 }
 
 function refresh() {
-  ['resume', 'updated'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  ['resume', 'updated', 'contact'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  show($('whenBox'), visibleKeys().indexOf('when') >= 0);
+  var any = answers.when === 'any';
+  $('whenAny').classList.toggle('on', any);
+  $('whenDate').classList.toggle('on', !any && !!$('whenDate').value);
+  $('whenTime').classList.toggle('on', !any && !!$('whenTime').value);
   document.querySelectorAll('.q[data-key]').forEach(function(box) {
     box.querySelectorAll('.opt').forEach(function(b) { b.classList.toggle('on', answers[box.dataset.key] === b.dataset.v); });
   });
@@ -231,7 +299,7 @@ document.querySelectorAll('.q[data-key] .opt').forEach(function(b) {
 
 function doneMessage() {
   if (answers.intent === 'decline') return '회신해 주셔서 감사합니다. 더 잘 맞는 기회가 생기면 다시 연락드리겠습니다.';
-  if (answers.intent === 'call') return '확인 후 곧 연락드리겠습니다.';
+  if (answers.intent === 'call') return answers.when && answers.when !== 'any' ? '말씀하신 시간에 맞춰 연락드리겠습니다.' : '확인 후 곧 연락드리겠습니다.';
   var parts = ['지원 의사를 확인했습니다. 서류 준비가 끝나면 진행 상황을 안내해 드리겠습니다.'];
   if (answers.updated === 'needs_update') parts.push('사람인 이력서를 업데이트하신 뒤 메일 회신이나 문자로 알려 주세요.');
   var missing = docList().filter(function(doc) { return doc !== OTHER_DOC && !uploaded.some(function(f) { return f.doc === doc; }); });
@@ -246,6 +314,7 @@ $('submit').addEventListener('click', function() {
   $('submit').disabled = true;
   $('submit').textContent = '보내는 중…';
   if (payload.intent === 'decline') { delete payload.resume; delete payload.updated; }
+  payload.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
   show($('err'), false);
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, answers: payload }) })
     .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
@@ -283,10 +352,14 @@ else fetch(API + '?t=' + encodeURIComponent(token))
     $('sub').textContent = d.name + ' 님, 아래 항목을 눌러 선택해 주세요. (1분이면 충분합니다)';
     extraDocs = d.extraDocs || '';
     uploaded = d.files || [];
+    buildWhenOptions();
     if (d.answers) {
       answers = Object.assign({}, d.answers);
       $('memo').value = d.answers.memo || '';
       delete answers.memo;
+      var w = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})$/.exec(answers.when || '');
+      if (w) { $('whenDate').value = w[1]; $('whenTime').value = w[2]; }
+      if (w && $('whenDate').value !== w[1]) delete answers.when;   // 지난 날짜면 다시 고르게
     }
     show($('loading'), false);
     show($('form'), true);
