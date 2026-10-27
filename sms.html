@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>문자 보내기 | 리니어스</title>
+<style>
+  :root { --navy: #34445e; --blue: #3d567c; --line: #e2e6ec; --sub: #6b7380; --bg: #f5f6f8; }
+  body { margin: 0; background: var(--bg); color: #333; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  .wrap { max-width: 420px; margin: 0 auto; padding: 40px 16px; text-align: center; }
+  .card { background: #fff; border-radius: 12px; padding: 28px 20px; box-shadow: 0 4px 14px rgba(30,40,55,.06); }
+  h1 { font-size: 17px; font-weight: 600; color: var(--navy); margin: 0 0 6px; }
+  p { margin: 0 0 18px; color: var(--sub); font-size: 14px; }
+  a.btn { display: inline-block; padding: 13px 30px; border-radius: 10px; background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+  <h1 id="title">문자 앱을 여는 중…</h1>
+  <p id="sub">열리지 않으면 아래 버튼을 눌러 주세요.</p>
+  <a class="btn" id="go" href="#">문자 앱 열기</a>
+</div></div>
+<script>
+// 텔레그램 알림의 '문자 보내기' 버튼 → 휴대폰 문자 앱을 받는 사람·첫 문장이 채워진 채로 열기
+//  번호는 주소의 # 뒤에만 있어 서버로 전송되지 않음
+var h = new URLSearchParams(location.hash.slice(1));
+var to = (h.get('to') || '').replace(/[^\d+]/g, '');
+var body = h.get('body') || '';
+if (!to) {
+  document.getElementById('title').textContent = '받는 번호가 없습니다';
+  document.getElementById('sub').textContent = '텔레그램 알림의 번호를 길게 눌러 복사해 주세요.';
+  document.getElementById('go').style.display = 'none';
+} else {
+  var ios = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  var url = 'sms:' + to + (body ? (ios ? '&' : '?') + 'body=' + encodeURIComponent(body) : '');
+  document.getElementById('go').href = url;
+  location.href = url;
+}
+</script>
+</body>
+</html>
