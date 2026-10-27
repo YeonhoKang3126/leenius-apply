@@ -70,8 +70,8 @@
       </div>
 
       <div class="q hidden" id="docsBox">
-        <h2><span class="num"></span>서류를 올려 주세요
-          <small>바로 헤드헌터에게 전달됩니다. 지금 올리기 어려우시면 나중에 메일로 보내셔도 됩니다. (파일당 10MB · PDF, Word, 한글 등)</small></h2>
+        <h2><span class="num"></span><span id="docsTitle">서류를 올려 주세요</span>
+          <small><span id="docsHint"></span> 바로 헤드헌터에게 전달되며, 지금 올리기 어려우시면 나중에 메일로 보내셔도 됩니다. (파일당 10MB · PDF, Word, 한글 등)</small></h2>
         <div id="slots"></div>
         <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.hwp,.hwpx,.ppt,.pptx,.xls,.xlsx,.txt,.rtf,.zip,.jpg,.jpeg,.png">
       </div>
@@ -124,11 +124,16 @@ function visibleKeys() {
   return keys;
 }
 
-// 오더의 제출 서류: 직접 보내는 경우 이력서 + 추가 서류, 사람인 이력서면 추가 서류만
+// 올릴 서류 칸: 직접 보내면 이력서 + (오더의 추가 서류) + 기타, 사람인 이력서면 (추가 서류) + 기타
+//  자기소개서는 대부분 이력서 안에 들어 있으므로 따로 칸을 두지 않음
+var OTHER_DOC = '기타 서류';
+function requiredExtras() {
+  return extraDocs.split(/\s*(?:,|、|\/|및)\s*/).map(function(d) { return d.trim(); })
+    .filter(function(d) { return d && !/이력서|자기\s*소개서|자소서|resume|cv|cover\s*letter/i.test(d); });
+}
 function docList() {
-  var extra = extraDocs.split(/\s*(?:,|、|·|\/|및)\s*/).map(function(d) { return d.trim(); }).filter(Boolean);
-  if (answers.resume === 'own') return ['이력서'].concat(extra);
-  if (answers.resume === 'saramin') return extra;
+  if (answers.resume === 'own') return ['이력서'].concat(requiredExtras(), [OTHER_DOC]);
+  if (answers.resume === 'saramin') return requiredExtras().concat([OTHER_DOC]);
   return [];
 }
 
@@ -143,7 +148,7 @@ function renderSlots() {
     head.className = 'slot-head';
     var name = document.createElement('span');
     name.className = 'slot-name';
-    name.textContent = doc;
+    name.textContent = doc === OTHER_DOC ? '기타 서류 (선택 · 경력기술서, 포트폴리오 등)' : doc;
     var pick = document.createElement('button');
     pick.className = 'pick';
     pick.type = 'button';
@@ -173,6 +178,9 @@ function refresh() {
   });
   var declined = answers.intent === 'decline';
   show($('docsBox'), answers.intent === 'apply' && renderSlots() > 0);
+  var own = answers.resume === 'own';
+  $('docsTitle').textContent = own ? '이력서를 올려 주세요' : '기타 제출 서류가 있으시면 올려 주세요';
+  $('docsHint').textContent = own ? '자기소개서·경력기술서 등 다른 서류가 있으시면 함께 올려 주세요.' : '선택 사항입니다.';
   show($('declineBox'), declined);
   $('memoHint').textContent = declined ? '선택 · 사유나 관심 있는 다른 분야를 남겨 주시면 참고하겠습니다' : '선택 · 통화 가능한 시간, 궁금한 점 등';
   // 보이는 질문만 차례로 번호
@@ -225,7 +233,7 @@ function doneMessage() {
   if (answers.intent === 'call') return '확인 후 곧 연락드리겠습니다.';
   var parts = ['지원 의사를 확인했습니다. 서류 준비가 끝나면 진행 상황을 안내해 드리겠습니다.'];
   if (answers.updated === 'needs_update') parts.push('사람인 이력서를 업데이트하신 뒤 메일 회신이나 문자로 알려 주세요.');
-  var missing = docList().filter(function(doc) { return !uploaded.some(function(f) { return f.doc === doc; }); });
+  var missing = docList().filter(function(doc) { return doc !== OTHER_DOC && !uploaded.some(function(f) { return f.doc === doc; }); });
   if (missing.length) parts.push('아직 올리지 않은 서류(' + missing.join(', ') + ')는 ' + CONTACT + ' 로 보내 주시거나, 메일의 버튼을 다시 눌러 올려 주세요.');
   return parts.join(' ');
 }
