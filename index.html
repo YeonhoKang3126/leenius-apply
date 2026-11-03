@@ -41,6 +41,12 @@
   select { flex: 1; min-width: 0; padding: 12px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font: inherit; color: inherit; }
   select.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
   .close { margin-top: 14px; padding: 11px 22px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font: inherit; cursor: pointer; }
+  .money { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+  .money input { flex: 1; min-width: 0; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; text-align: right; }
+  .money input.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
+  .money span { flex-shrink: 0; font-weight: 600; }
+  #startText { width: 100%; padding: 12px 14px; border: 1.5px solid var(--blue); border-radius: 10px; font: inherit; margin: 0 0 4px; }
+  .reopen { background: #eef3f9; border: 1px solid #d5e0ee; color: #34445e; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; margin-bottom: 18px; }
 </style>
 </head>
 <body>
@@ -53,6 +59,7 @@
     <div id="loading" class="msg"><p>불러오는 중…</p></div>
 
     <div id="form" class="hidden">
+      <div class="reopen hidden" id="reopenBox">채용이 다시 진행됩니다. 이전에 보내 주신 내용을 그대로 채워 두었습니다 — 확인 후 [보내기]만 눌러 주세요. 이번엔 어려우시면 '이번엔 지원하지 않겠습니다'를 골라 주세요.</div>
       <div class="q" data-key="intent">
         <h2><span class="num"></span>제안드린 포지션에 지원하시겠어요?</h2>
         <button class="opt" data-v="apply">네, 지원하겠습니다</button>
@@ -71,6 +78,32 @@
         <h2><span class="num"></span>사람인 이력서에 최신 경력이 반영되어 있나요?</h2>
         <button class="opt" data-v="latest">네, 최신 상태입니다</button>
         <button class="opt" data-v="needs_update">업데이트가 필요해요 (업데이트 후 알려드릴게요)</button>
+      </div>
+
+      <div class="q hidden" data-key="start">
+        <h2><span class="num"></span>최종 합격하시면 언제부터 입사하실 수 있나요?
+          <small>현재 회사 인수인계 기간 등을 생각해 대략적으로 골라 주세요. 정확하지 않아도 괜찮습니다.</small></h2>
+        <button class="opt" data-v="now">바로 가능해요</button>
+        <button class="opt" data-v="1w">합격 후 1주 이내</button>
+        <button class="opt" data-v="2w">합격 후 2주 이내</button>
+        <button class="opt" data-v="4w">합격 후 한 달(4주) 이내</button>
+        <button class="opt" data-v="8w">합격 후 두 달 이내</button>
+        <button class="opt" data-v="custom">직접 적을게요</button>
+        <input type="text" id="startText" class="hidden" maxlength="60" placeholder="예: 12월 말 퇴사 후 1월 중순부터, 프로젝트 마무리 후 협의 등">
+      </div>
+
+      <div class="q hidden" data-key="salary_now">
+        <h2><span class="num"></span>현재 연봉을 알려 주세요
+          <small>추천할 때 고객사 채용 담당자에게만 전달됩니다. 세전 연봉 기준으로 적어 주시고, 성과급 등은 아래 '남기실 말씀'에 적어 주세요.</small></h2>
+        <div class="money"><input type="text" inputmode="numeric" id="salaryNow" maxlength="6" placeholder="예: 4500"><span>만원</span></div>
+      </div>
+
+      <div class="q hidden" data-key="desired">
+        <h2><span class="num"></span>희망 연봉은 어떻게 전달할까요?</h2>
+        <button class="opt" data-v="up">현 연봉에서 상향 협의</button>
+        <button class="opt" data-v="amount">희망 금액을 적을게요</button>
+        <div class="money hidden" id="desiredBox"><input type="text" inputmode="numeric" id="desiredAmount" maxlength="6" placeholder="예: 5000"><span>만원</span></div>
+        <button class="opt" data-v="policy">회사 내규에 따름 (협의)</button>
       </div>
 
       <div class="q hidden" data-key="contact">
@@ -112,6 +145,12 @@
       <p class="note">헤드헌터 강연호 이사에게 바로 전달됩니다.</p>
     </div>
 
+    <div id="closed" class="msg hidden">
+      <h2>모집이 마감되었습니다</h2>
+      <p id="closedText"></p>
+      <p class="note">헤드헌터 강연호 이사 · <span id="closedMail"></span></p>
+    </div>
+
     <div id="done" class="msg hidden">
       <h2>감사합니다!</h2>
       <p id="doneText"></p>
@@ -141,6 +180,7 @@ function visibleKeys() {
   if (answers.intent === 'apply') {
     keys.push('resume');
     if (answers.resume === 'saramin') keys.push('updated');
+    keys.push('start', 'salary_now', 'desired');   // 입사 가능 시기·현재 연봉·희망 연봉 (추천서에 씀)
   }
   if (answers.intent === 'apply' || answers.intent === 'call') keys.push('contact', 'when');
   return keys;
@@ -236,7 +276,11 @@ function renderSlots() {
 }
 
 function refresh() {
-  ['resume', 'updated', 'contact'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  ['resume', 'updated', 'start', 'salary_now', 'desired', 'contact'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  show($('startText'), answers.start === 'custom');
+  show($('desiredBox'), answers.desired === 'amount');
+  $('salaryNow').classList.toggle('on', !!answers.salary_now);
+  $('desiredAmount').classList.toggle('on', !!$('desiredAmount').value);
   show($('whenBox'), visibleKeys().indexOf('when') >= 0);
   var any = answers.when === 'any';
   $('whenAny').classList.toggle('on', any);
@@ -260,7 +304,9 @@ function refresh() {
   });
   var busy = Object.keys(pending).some(function(d) { return pending[d].some(function(p) { return p.state === 'up'; }); });
   $('submit').textContent = declined ? '응답 보내고 마치기' : busy ? '파일 올리는 중…' : '보내기';
-  $('submit').disabled = busy || !visibleKeys().every(function(k) { return answers[k]; });
+  $('submit').disabled = busy || !visibleKeys().every(function(k) { return answers[k]; }) ||
+    (visibleKeys().indexOf('start') >= 0 && answers.start === 'custom' && !$('startText').value.trim()) ||
+    (visibleKeys().indexOf('desired') >= 0 && answers.desired === 'amount' && !$('desiredAmount').value);
 }
 
 var UPLOAD_ERR = { size: '10MB 이하 파일만 올릴 수 있어요', type: '지원하지 않는 파일 형식이에요', too_many: '올릴 수 있는 파일 수를 넘었어요' };
@@ -284,14 +330,29 @@ $('fileInput').addEventListener('change', function() {
       refresh();
     })
     .catch(function(e) {
+      if (e && e.message === 'closed') { showClosed({ position: $('title').textContent }); return; }
       item.state = 'bad';
       item.why = UPLOAD_ERR[e.message] || '올리지 못했어요. 다시 시도하시거나 ' + CONTACT + ' 로 보내 주세요';
       refresh();
     });
 });
 
+$('startText').addEventListener('input', refresh);
+// 연봉은 숫자만 (만원 단위) — 1,000 단위 쉼표는 보기 좋게만
+function moneyInput(el, onVal) {
+  el.addEventListener('input', function() {
+    var d = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 5);
+    el.value = d ? Number(d).toLocaleString('ko-KR') : '';
+    onVal(d);
+    refresh();
+  });
+}
+moneyInput($('salaryNow'), function(d) { if (d) answers.salary_now = d; else delete answers.salary_now; });
+moneyInput($('desiredAmount'), function() {});
 document.querySelectorAll('.q[data-key] .opt').forEach(function(b) {
   b.addEventListener('click', function() {
+    if (b.dataset.v === 'custom') setTimeout(function() { $('startText').focus(); }, 0);
+    if (b.dataset.v === 'amount') setTimeout(function() { $('desiredAmount').focus(); }, 0);
     answers[b.closest('.q').dataset.key] = b.dataset.v;
     refresh();
   });
@@ -310,6 +371,8 @@ function doneMessage() {
 $('submit').addEventListener('click', function() {
   var payload = {};
   visibleKeys().forEach(function(k) { payload[k] = answers[k]; });
+  if (payload.start === 'custom') payload.start_text = $('startText').value.trim();
+  if (payload.desired === 'amount') payload.desired_amount = $('desiredAmount').value.replace(/\D/g, '');
   payload.memo = $('memo').value;
   $('submit').disabled = true;
   $('submit').textContent = '보내는 중…';
@@ -323,7 +386,8 @@ $('submit').addEventListener('click', function() {
       show($('form'), false);
       show($('done'), true);
     })
-    .catch(function() {
+    .catch(function(e) {
+      if (e && e.message === 'closed') { showClosed({ position: $('title').textContent }); return; }
       $('err').textContent = '전송에 실패했습니다. 잠시 후 다시 시도하시거나 ' + CONTACT + ' 로 회신 부탁드립니다.';
       show($('err'), true);
       refresh();
@@ -335,6 +399,18 @@ $('closeBtn').addEventListener('click', function() {
   window.close();
   setTimeout(function() { $('closeBtn').textContent = '브라우저 탭을 닫아 주세요'; $('closeBtn').disabled = true; }, 300);
 });
+
+// 오더가 마감된 링크: 지원서 대신 정중한 마감 안내
+function showClosed(d) {
+  $('title').textContent = String(d.position || '채용 마감 안내').replace(/_\d+명\s*$/, '').replace(/_/g, ' ');
+  $('sub').textContent = '';
+  $('closedText').textContent = (d.name ? d.name + ' 님, ' : '') + '관심 가져 주셔서 진심으로 감사드립니다. 이 포지션은 고객사의 채용이 완료되어 아쉽게도 모집이 마감되었습니다. ' +
+    '경력에 맞는 좋은 기회가 생기면 가장 먼저 연락드리겠습니다.';
+  $('closedMail').textContent = CONTACT;
+  show($('loading'), false);
+  show($('form'), false);
+  show($('closed'), true);
+}
 
 function fail(text) {
   $('sub').textContent = '';
@@ -348,8 +424,10 @@ if (!token) fail('링크가 올바르지 않습니다. 메일의 버튼을 다�
 else fetch(API + '?t=' + encodeURIComponent(token))
   .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(function(d) {
+    if (d.closed) { showClosed(d); return; }
     $('title').textContent = d.position || '지원 의사 확인';
     $('sub').textContent = d.name + ' 님, 아래 항목을 눌러 선택해 주세요. (1분이면 충분합니다)';
+    show($('reopenBox'), !!d.reopened);
     extraDocs = d.extraDocs || '';
     uploaded = d.files || [];
     buildWhenOptions();
@@ -357,6 +435,11 @@ else fetch(API + '?t=' + encodeURIComponent(token))
       answers = Object.assign({}, d.answers);
       $('memo').value = d.answers.memo || '';
       delete answers.memo;
+      $('startText').value = d.answers.start_text || '';
+      delete answers.start_text;
+      if (answers.salary_now) $('salaryNow').value = Number(answers.salary_now).toLocaleString('ko-KR');
+      if (d.answers.desired_amount) $('desiredAmount').value = Number(d.answers.desired_amount).toLocaleString('ko-KR');
+      delete answers.desired_amount;
       var w = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})$/.exec(answers.when || '');
       if (w) { $('whenDate').value = w[1]; $('whenTime').value = w[2]; }
       if (w && $('whenDate').value !== w[1]) delete answers.when;   // 지난 날짜면 다시 고르게
