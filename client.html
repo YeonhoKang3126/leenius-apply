@@ -144,11 +144,13 @@ var SAMPLE = {
     { h: '■ Indirect Compensation (Welfare benefits)', lines: ['중식 제공', '교육비 지원', '건강검진 지원'] },
     { h: '■ Location', lines: ['서울특별시 ○○구 (본사)'] },
     { h: '■ Employment type', lines: ['정규직 (수습기간 3개월)'] },
-    { h: '■ Screening process', lines: ['서류전형 → 1차 면접전형 → 2차 면접전형 → 최종합격'] }
+    { h: '■ Screening process', lines: ['서류전형 → 1차 면접전형 → 2차 면접전형 → 최종합격'] },
+    { h: '■ Guidelines for Applicants', lines: ['제출서류: 국문 이력서, 국문 자기소개서, 포트폴리오', '접수방법: 이메일', '제출마감: Urgent, 적임자 수시 면접'] }
   ]
 };
 var KEY_H = /Key tasks|Qualification|Preferential/;
-function sampleOf(h) { return SAMPLE.sections.filter(function(s) { return s.h === h; })[0]; }
+function sample() { return (form.spec && form.spec.sample) || SAMPLE; }   // 포지션별 예시가 있으면 그것을
+function sampleOf(h) { return sample().sections.filter(function(s) { return s.h === h; })[0] || SAMPLE.sections.filter(function(s) { return s.h === h; })[0]; }
 
 function fail(text) {
   $('loading').querySelector('p').textContent = text;
@@ -397,8 +399,8 @@ function openSample() {
   notice.appendChild(el('small', '', '업무, 산업, 사용 도구를 구체적으로 적어 주시면 후보자를 찾는 데 큰 도움이 됩니다.'));
   var body = $('pvBody');
   body.textContent = '';
-  body.appendChild(el('p', 'pv-title', SAMPLE.title));
-  SAMPLE.sections.forEach(function(s) {
+  body.appendChild(el('p', 'pv-title', sample().title));
+  sample().sections.forEach(function(s) {
     body.appendChild(el('h3', '', s.h));
     var ul = el('ul');
     s.lines.forEach(function(x) { ul.appendChild(el('li', '', x)); });
