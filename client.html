@@ -318,7 +318,8 @@ function jdView(answers) {
       if (i.f === 'headcount') return;
       if (!i.f) { if (!struck[i.t]) ul.appendChild(el('li', '', i.t)); return; }
       var v = answers[i.f];
-      if (v) v.split('\n').forEach(function(x) { ul.appendChild(el('li', '', x)); });
+      if (v && i.prefix) ul.appendChild(el('li', '', i.prefix + ': ' + v.split('\n').join(', ')));
+      else if (v) v.split('\n').forEach(function(x) { ul.appendChild(el('li', '', x)); });
       else if (!i.nolabel) { var li = el('li'); li.appendChild(el('span', 'pv-empty', '미입력 · ' + i.label)); ul.appendChild(li); }
     });
     if (!ul.children.length) { var none = el('li'); none.appendChild(el('span', 'pv-empty', '내용 없음')); ul.appendChild(none); }
