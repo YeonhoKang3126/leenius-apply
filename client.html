@@ -27,10 +27,6 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
   .chip { padding: 8px 13px; border: 1.5px solid var(--line); border-radius: 20px; background: #fff; font: inherit; font-size: 14px; color: inherit; cursor: pointer; }
   .chip.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
-  textarea { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1.5px dashed var(--askline); border-radius: 10px; background: var(--ask); font: inherit; color: inherit; resize: none; overflow: hidden; }
-  textarea:focus { outline: none; border-style: solid; border-color: var(--blue); background: #fff; }
-  textarea.filled { border-style: solid; border-color: var(--line); background: #fff; }
-  textarea::placeholder { color: #a08a5c; }
   .chk { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 6px; cursor: pointer; }
   .chk input { width: 17px; height: 17px; margin: 4px 0 0; flex-shrink: 0; accent-color: var(--blue); cursor: pointer; }
   .chk input:checked + span { text-decoration: line-through; color: #9aa2ae; }
@@ -42,6 +38,10 @@
   .addrow input:focus { outline: none; border-style: solid; border-color: var(--blue); background: #fff; }
   .addrow input::placeholder { color: #a08a5c; }
   .addrow button { flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font-size: 18px; cursor: pointer; }
+  section.secret { padding: 14px 14px 4px; border: 1.5px solid var(--navy); border-radius: 10px; }
+  section.secret h2 { display: flex; align-items: center; gap: 8px; }
+  .lock { padding: 1px 8px; border-radius: 10px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 600; }
+  .secret-note { margin: 0 0 10px; font-size: 13px; color: var(--navy); }
   .bar { padding: 6px 0 4px; }
   .submit { width: 100%; padding: 15px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
   .submit:disabled { background: #c3cad4; cursor: default; }
@@ -60,6 +60,10 @@
   .pv-body h3 { font-size: 14px; color: var(--navy); margin: 16px 0 6px; }
   .pv-body ul { margin: 0; padding-left: 18px; }
   .pv-body li { margin: 0 0 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pv-q { margin: 0 0 8px; font-size: 14px; }
+  .pv-q b { display: block; font-weight: 600; }
+  .pv-q span { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pv-q span.pv-empty { display: inline-block; }
   .pv-empty { color: #a08a5c; background: var(--ask); border-radius: 4px; padding: 0 5px; font-size: 13px; }
   .pv-memo { margin: 18px 0 0; padding: 10px 12px; background: var(--pick); border-radius: 8px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pv-memo b { display: block; font-size: 13px; color: var(--sub); font-weight: 600; }
@@ -85,7 +89,7 @@
       <div class="guide" id="guide"></div>
       <div id="body"></div>
       <div class="bar">
-        <button class="ghost hidden" id="preview" type="button">미리보기</button>
+        <button class="ghost" id="preview" type="button">미리보기</button>
         <button class="submit" id="save" type="submit">저장하기</button>
         <p class="note" id="left"></p>
         <p class="err hidden" id="err"></p>
@@ -121,12 +125,22 @@ function fail(text) {
   $('sub').textContent = '리니어스';
 }
 function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; t.classList.toggle('filled', !!t.value.trim()); }
+// 조건부 문항(when)은 앞 문항의 답이 맞을 때만 보임
+function active(f) {
+  if (!f.spec.when) return true;
+  var dep = fields.filter(function(x) { return x.spec.f === f.spec.when.f; })[0];
+  return !!dep && dep.get() === f.spec.when.v;
+}
+function emptyCount() { return fields.filter(function(f) { return active(f) && !f.get() && !f.spec.nolabel; }).length; }
 function countLeft() {
-  var n = fields.filter(function(f) { return !f.get() && !f.spec.nolabel; }).length;
+  var n = emptyCount();
   $('left').textContent = n ? '아직 비어 있는 칸 ' + n + '개 · 모르는 항목은 비워 두고 저장하셔도 됩니다' : '모든 칸을 입력하셨습니다';
 }
-function touch() { dirty = true; countLeft(); }
+function refresh() {
+  fields.forEach(function(f) { f.box.classList.toggle('hidden', !active(f)); });
+  countLeft();
+}
+function touch() { dirty = true; refresh(); }
 
 // 줄 단위 입력: Enter 또는 → 버튼으로 기존 내용 아래에 한 줄씩 추가
 function listInput(f, init, hooks) {
@@ -199,79 +213,52 @@ function buildLine(text) {
   return lab;
 }
 
-// 입력칸: 고를 수 있는 항목(opts) + 직접 입력
+// 입력칸: 고를 수 있는 항목(opts) + 줄 단위 직접 입력 (값은 줄바꿈으로 이어서 저장)
 function buildField(f, value) {
-  var rows = form.kind === 'jd';   // JD는 모든 입력칸이 줄 단위 (설문은 한 칸에 답)
   var box = el('div', 'field');
-  var id = 'f_' + f.f;
   if (!f.nolabel) {
     var lab = el(f.opts ? 'div' : 'label', 'label', f.label);
-    if (!f.opts) lab.htmlFor = id;
+    if (!f.opts) lab.htmlFor = 'f_' + f.f;
     if (f.hint) lab.appendChild(el('small', '', f.hint));
     box.appendChild(lab);
   }
-  var picked = [], custom = value || '';
-  var chips = [];
+  var parts = value ? value.split('\n').filter(function(x) { return x.trim(); }) : [];
+  var picked = f.opts ? parts.filter(function(p) { return f.opts.indexOf(p) >= 0; }) : [];
+  var chips = [], entry;
+  function paint() {
+    chips.forEach(function(c) { var on = picked.indexOf(c.textContent) >= 0; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  }
   if (f.opts) {
-    var parts = value ? (rows ? value.split('\n') : f.multi ? value.split(', ') : [value]) : [];
-    picked = parts.filter(function(p) { return f.opts.indexOf(p) >= 0; });
-    custom = parts.filter(function(p) { return f.opts.indexOf(p) < 0; }).join(', ');
     var row = el('div', 'chips');
     f.opts.forEach(function(o) {
-      var b = el('button', 'chip' + (picked.indexOf(o) >= 0 ? ' on' : ''), o);
+      var b = el('button', 'chip', o);
       b.type = 'button';
-      b.setAttribute('aria-pressed', picked.indexOf(o) >= 0 ? 'true' : 'false');
       b.addEventListener('click', function() {
         var i = picked.indexOf(o);
         if (i >= 0) picked.splice(i, 1);
         else {
-          if (!f.multi) { picked = []; if (entry) entry.clear(); else { ta.value = ''; grow(ta); } }
+          if (!f.multi) { picked = []; entry.clear(); }
           picked.push(o);
         }
-        chips.forEach(function(c) { var on = picked.indexOf(c.textContent) >= 0; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
-        touch();
+        paint(); touch();
       });
       chips.push(b);
       row.appendChild(b);
     });
     box.appendChild(row);
+    paint();
   }
-  var entry = null, ta = null;
-  if (rows) {
-    var init = f.opts ? parts.filter(function(p) { return f.opts.indexOf(p) < 0; }) : (value ? value.split('\n').filter(function(x) { return x.trim(); }) : []);
-    entry = listInput(f, init, { typing: function() {
-      if (f.opts && !f.multi && picked.length) {
-        picked = [];
-        chips.forEach(function(c) { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
-      }
-    } });
-    entry.nodes.forEach(function(n) { box.appendChild(n); });
-    fields.push({ spec: f, get: function() { return picked.concat(entry.values()).join('\n'); } });
-    return box;
-  }
-  ta = el('textarea');
-  ta.id = id;
-  ta.rows = 1;
-  ta.value = custom;
-  ta.placeholder = f.opts ? '직접 입력' : (f.ph || '클릭해서 입력해 주세요');
-  if (f.opts) ta.setAttribute('aria-label', f.label + ' 직접 입력');
-  ta.addEventListener('input', function() {
-    if (f.opts && !f.multi && ta.value.trim() && picked.length) {
-      picked = [];
-      chips.forEach(function(c) { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
-    }
-    grow(ta); touch();
-  });
-  box.appendChild(ta);
-  setTimeout(function() { grow(ta); }, 0);
-  fields.push({ spec: f, get: function() { return picked.concat(ta.value.trim() ? [ta.value.trim()] : []).join(', '); } });
+  entry = listInput(f, parts.filter(function(p) { return picked.indexOf(p) < 0; }), { typing: function() {
+    if (f.opts && !f.multi && picked.length) { picked = []; paint(); }
+  } });
+  entry.nodes.forEach(function(n) { box.appendChild(n); });
+  fields.push({ spec: f, box: box, get: function() { return picked.concat(entry.values()).join('\n'); } });
   return box;
 }
 
 function render(d) {
   form = d;
   var jd = d.kind === 'jd';
-  $('preview').classList.toggle('hidden', !jd);
   $('title').textContent = jd ? d.position : d.client + ' 채용 설문';
   $('sub').textContent = jd ? d.client + ' · JD 확인' : '약 5분 · 리니어스 헤드헌터 강연호';
   document.title = (jd ? d.position : '채용 설문') + ' | 리니어스';
@@ -283,15 +270,18 @@ function render(d) {
     String((d.answers || {})._struck || '').split('\n').forEach(function(x) { if (x) struck[x] = true; });
   } else guide.textContent = (d.spec.intro || '후보자에게 정확히 안내드리기 위한 질문입니다. 고르거나 짧게 적어 주시면 되고, 모르는 항목은 비워 두셔도 됩니다.');
   d.spec.sections.forEach(function(s) {
-    var sec = el('section');
-    sec.appendChild(el('h2', '', s.title));
+    var sec = el('section', s.secret ? 'secret' : '');
+    var h = el('h2', '', s.title);
+    if (s.secret) h.appendChild(el('span', 'lock', '비공개'));
+    sec.appendChild(h);
+    if (s.note) sec.appendChild(el('p', 'secret-note', s.note));
     (s.items || []).forEach(function(i) {
       if (i.f) sec.appendChild(buildField(i, (d.answers || {})[i.f] || ''));
       else sec.appendChild(jd ? buildLine(i.t) : el('p', 'line', i.t));
     });
     $('body').appendChild(sec);
   });
-  countLeft();
+  refresh();
   $('loading').classList.add('hidden');
   $('form').classList.remove('hidden');
 }
@@ -299,7 +289,7 @@ function render(d) {
 // 지금 입력한 값 (저장·미리보기 공통)
 function collect() {
   var answers = {};
-  fields.forEach(function(f) { var v = f.get(); if (v) answers[f.spec.f] = v; });
+  fields.forEach(function(f) { var v = f.get(); if (v && active(f)) answers[f.spec.f] = v; });
   var cut = Object.keys(struck);
   if (cut.length) answers._struck = cut.join('\n');
   return answers;
@@ -335,14 +325,33 @@ function jdView(answers) {
   return box;
 }
 
+// 설문: 질문과 답을 그대로
+function surveyView(answers) {
+  var box = document.createDocumentFragment();
+  form.spec.sections.forEach(function(s) {
+    var h = el('h3', '', s.title + (s.secret ? ' (비공개)' : ''));
+    box.appendChild(h);
+    (s.items || []).forEach(function(i) {
+      if (!i.f) return;
+      if (i.when && answers[i.when.f] !== i.when.v) return;
+      var q = el('div', 'pv-q');
+      q.appendChild(el('b', '', i.label));
+      q.appendChild(el('span', answers[i.f] ? '' : 'pv-empty', answers[i.f] || '미입력'));
+      box.appendChild(q);
+    });
+  });
+  return box;
+}
+
 function openPv(confirming) {
   var answers = collect();
-  var empty = fields.filter(function(f) { return !f.get() && !f.spec.nolabel; }).length;
+  var empty = emptyCount();
+  var jd = form.kind === 'jd';
   var cut = Object.keys(struck).length;
-  $('pvTitle').textContent = confirming ? '저장 전 최종 확인' : 'JD 미리보기';
+  $('pvTitle').textContent = confirming ? '저장 전 최종 확인' : (jd ? 'JD' : '설문') + ' 미리보기';
   var notice = $('pvNotice');
   notice.textContent = '';
-  notice.appendChild(el('b', '', confirming ? '아래 내용으로 저장되어 담당 헤드헌터에게 전달됩니다.' : '현재 입력한 내용으로 저장하면 아래와 같이 작성됩니다.'));
+  notice.appendChild(el('b', '', confirming ? '아래 내용으로 저장되어 담당 헤드헌터에게 전달됩니다.' : (jd ? '현재 입력한 내용으로 저장하면 아래와 같이 작성됩니다.' : '현재 입력한 내용은 아래와 같습니다.')));
   var sub = [];
   if (!confirming) sub.push('아직 저장되지 않았습니다');
   if (cut) sub.push('체크한 내용 ' + cut + '건 제외');
@@ -350,7 +359,7 @@ function openPv(confirming) {
   if (sub.length) notice.appendChild(el('small', '', sub.join(' · ')));
   var body = $('pvBody');
   body.textContent = '';
-  body.appendChild(jdView(answers));
+  body.appendChild(jd ? jdView(answers) : surveyView(answers));
   body.scrollTop = 0;
   $('pvBack').textContent = confirming ? '수정하기' : '닫기';
   $('pvOk').classList.toggle('hidden', !confirming);
@@ -400,7 +409,7 @@ function save(btn) {
 
 $('form').addEventListener('submit', function(e) {
   e.preventDefault();
-  if (form.kind === 'jd') openPv(true); else save($('save'));
+  openPv(true);
 });
 $('preview').addEventListener('click', function() { openPv(false); });
 $('pvBack').addEventListener('click', function() { $('pv').close(); });
