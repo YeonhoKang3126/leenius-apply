@@ -31,6 +31,17 @@
   textarea:focus { outline: none; border-style: solid; border-color: var(--blue); background: #fff; }
   textarea.filled { border-style: solid; border-color: var(--line); background: #fff; }
   textarea::placeholder { color: #a08a5c; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 6px; cursor: pointer; }
+  .chk input { width: 17px; height: 17px; margin: 4px 0 0; flex-shrink: 0; accent-color: var(--blue); cursor: pointer; }
+  .chk input:checked + span { text-decoration: line-through; color: #9aa2ae; }
+  .added { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 6px; padding: 5px 8px 5px 10px; background: var(--pick); border-radius: 8px; }
+  .added span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .added button { flex-shrink: 0; width: 26px; height: 26px; padding: 0; border: 0; background: none; color: var(--sub); font-size: 16px; line-height: 1; cursor: pointer; }
+  .addrow { display: flex; gap: 6px; }
+  .addrow input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 1.5px dashed var(--askline); border-radius: 10px; background: var(--ask); font: inherit; color: inherit; }
+  .addrow input:focus { outline: none; border-style: solid; border-color: var(--blue); background: #fff; }
+  .addrow input::placeholder { color: #a08a5c; }
+  .addrow button { flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font-size: 18px; cursor: pointer; }
   .bar { padding: 6px 0 4px; }
   .submit { width: 100%; padding: 15px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
   .submit:disabled { background: #c3cad4; cursor: default; }
@@ -71,6 +82,7 @@ var token = new URLSearchParams(location.search).get('t') || '';
 var $ = function(id) { return document.getElementById(id); };
 var fields = [];     // { spec, get() }
 var dirty = false;
+var struck = {};     // 기존 내용 중 체크(가로줄)한 문장
 
 function fail(text) {
   $('loading').querySelector('p').textContent = text;
@@ -80,13 +92,91 @@ function fail(text) {
 function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; t.classList.toggle('filled', !!t.value.trim()); }
 function countLeft() {
-  var n = fields.filter(function(f) { return !f.get(); }).length;
+  var n = fields.filter(function(f) { return !f.get() && !f.spec.nolabel; }).length;
   $('left').textContent = n ? '아직 비어 있는 칸 ' + n + '개 · 모르는 항목은 비워 두고 저장하셔도 됩니다' : '모든 칸을 입력하셨습니다';
 }
 function touch() { dirty = true; countLeft(); }
 
+// 줄 단위 입력칸: Enter 또는 → 버튼으로 기존 내용 아래에 한 줄씩 추가 (값은 줄바꿈으로 이어서 저장)
+function buildList(f, value) {
+  var box = el('div', 'field');
+  if (!f.nolabel) {
+    var lab = el('label', 'label', f.label);
+    lab.htmlFor = 'f_' + f.f;
+    if (f.hint) lab.appendChild(el('small', '', f.hint));
+    box.appendChild(lab);
+  }
+  var items = value ? value.split('\n').filter(function(x) { return x.trim(); }) : [];
+  var list = el('div');
+  function draw() {
+    list.textContent = '';
+    items.forEach(function(text, i) {
+      var row = el('div', 'added');
+      row.appendChild(el('span', '', text));
+      var x = el('button', '', '×');
+      x.type = 'button';
+      x.setAttribute('aria-label', text + ' 삭제');
+      x.addEventListener('click', function() { items.splice(i, 1); draw(); touch(); });
+      row.appendChild(x);
+      list.appendChild(row);
+    });
+  }
+  var inp = el('input');
+  inp.type = 'text';
+  inp.id = 'f_' + f.f;
+  inp.placeholder = (f.ph || '클릭해서 입력') + ' 후 Enter';
+  inp.setAttribute('aria-label', f.label);
+  function add() {
+    var v = inp.value.trim();
+    if (!v) return;
+    items.push(v);
+    inp.value = '';
+    draw(); touch();
+  }
+  // 한글 조합 중 Enter: 조합이 끝난 뒤에 추가 (빈 값이면 add가 무시하므로 두 번 불려도 안전)
+  var waiting = false;
+  inp.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (e.isComposing || e.keyCode === 229) waiting = true; else add();
+  });
+  inp.addEventListener('compositionend', function() {
+    if (waiting) { waiting = false; setTimeout(add, 0); }
+  });
+  inp.addEventListener('input', touch);
+  var go = el('button', '', '→');
+  go.type = 'button';
+  go.setAttribute('aria-label', '추가');
+  go.addEventListener('click', function() { add(); inp.focus(); });
+  var row = el('div', 'addrow');
+  row.appendChild(inp);
+  row.appendChild(go);
+  draw();
+  box.appendChild(list);
+  box.appendChild(row);
+  // 추가 버튼을 안 누르고 저장해도 입력한 글이 사라지지 않게 함께 저장
+  fields.push({ spec: f, get: function() { return items.concat(inp.value.trim() ? [inp.value.trim()] : []).join('\n'); } });
+  return box;
+}
+
+// 기존 내용: 체크하면 가로줄 (필요 없는 내용 표시)
+function buildLine(text) {
+  var lab = el('label', 'chk');
+  var c = el('input');
+  c.type = 'checkbox';
+  c.checked = !!struck[text];
+  c.addEventListener('change', function() {
+    if (c.checked) struck[text] = true; else delete struck[text];
+    dirty = true;
+  });
+  lab.appendChild(c);
+  lab.appendChild(el('span', '', text));
+  return lab;
+}
+
 // 입력칸: 고를 수 있는 항목(opts) + 직접 입력
 function buildField(f, value) {
+  if (f.list) return buildList(f, value);
   var box = el('div', 'field');
   var id = 'f_' + f.f;
   var lab = el(f.opts ? 'div' : 'label', 'label', f.label);
@@ -144,14 +234,15 @@ function render(d) {
   if (jd) {
     guide.appendChild(document.createTextNode('보내 주신 채용계획으로 초안을 작성했습니다. '));
     guide.appendChild(el('b', '', '노란 칸'));
-    guide.appendChild(document.createTextNode('만 채워 주세요. 공통 항목은 한 번 저장하면 다른 포지션에도 자동으로 채워집니다.'));
+    guide.appendChild(document.createTextNode('을 채워 주세요. 추가할 내용은 입력 후 Enter 또는 → 버튼을 누르면 아래에 더해집니다. 이미 적힌 내용 중 필요 없는 것은 체크해 주세요. 공통 항목은 한 번 저장하면 다른 포지션에도 자동으로 채워집니다.'));
+    String((d.answers || {})._struck || '').split('\n').forEach(function(x) { if (x) struck[x] = true; });
   } else guide.textContent = (d.spec.intro || '후보자에게 정확히 안내드리기 위한 질문입니다. 고르거나 짧게 적어 주시면 되고, 모르는 항목은 비워 두셔도 됩니다.');
   d.spec.sections.forEach(function(s) {
     var sec = el('section');
     sec.appendChild(el('h2', '', s.title));
     (s.items || []).forEach(function(i) {
       if (i.f) sec.appendChild(buildField(i, (d.answers || {})[i.f] || ''));
-      else sec.appendChild(el('p', 'line', i.t));
+      else sec.appendChild(jd ? buildLine(i.t) : el('p', 'line', i.t));
     });
     $('body').appendChild(sec);
   });
@@ -179,6 +270,8 @@ $('form').addEventListener('submit', function(e) {
   e.preventDefault();
   var answers = {};
   fields.forEach(function(f) { var v = f.get(); if (v) answers[f.spec.f] = v; });
+  var cut = Object.keys(struck);
+  if (cut.length) answers._struck = cut.join('\n');
   var btn = $('save');
   btn.disabled = true; btn.textContent = '저장 중…';
   $('err').classList.add('hidden');
