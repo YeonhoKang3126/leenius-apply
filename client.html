@@ -45,6 +45,26 @@
   .bar { padding: 6px 0 4px; }
   .submit { width: 100%; padding: 15px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
   .submit:disabled { background: #c3cad4; cursor: default; }
+  .ghost { width: 100%; padding: 13px; margin: 0 0 8px; border: 1.5px solid var(--blue); border-radius: 10px; background: #fff; color: var(--blue); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .ghost:disabled { border-color: #c3cad4; color: #c3cad4; cursor: default; }
+  dialog { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 12px; color: var(--text); box-shadow: 0 12px 40px rgba(30,40,55,.25); overflow: hidden; }
+  dialog[open] { display: flex; flex-direction: column; }
+  dialog::backdrop { background: rgba(30,40,55,.5); }
+  .pv-head { background: var(--navy); color: #f0f3f7; padding: 14px 20px; flex-shrink: 0; }
+  .pv-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+  .pv-notice { padding: 12px 20px; background: var(--pick); font-size: 14px; flex-shrink: 0; }
+  .pv-notice b { display: block; color: var(--navy); }
+  .pv-notice small { display: block; color: var(--sub); font-size: 12.5px; margin-top: 2px; }
+  .pv-body { padding: 16px 20px; overflow-y: auto; flex: 1; min-height: 0; }
+  .pv-title { font-size: 16px; font-weight: 700; color: var(--navy); margin: 0 0 14px; }
+  .pv-body h3 { font-size: 14px; color: var(--navy); margin: 16px 0 6px; }
+  .pv-body ul { margin: 0; padding-left: 18px; }
+  .pv-body li { margin: 0 0 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pv-empty { color: #a08a5c; background: var(--ask); border-radius: 4px; padding: 0 5px; font-size: 13px; }
+  .pv-memo { margin: 18px 0 0; padding: 10px 12px; background: var(--pick); border-radius: 8px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pv-memo b { display: block; font-size: 13px; color: var(--sub); font-weight: 600; }
+  .pv-foot { display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); flex-shrink: 0; }
+  .pv-foot button { flex: 1; margin: 0; padding: 13px; font-size: 15px; }
   .note { font-size: 13px; color: var(--sub); margin: 8px 0 0; text-align: center; }
   .err { color: #8a5a44; font-size: 13px; text-align: center; margin: 8px 0 0; }
   .msg { text-align: center; padding: 26px 6px 8px; }
@@ -65,6 +85,7 @@
       <div class="guide" id="guide"></div>
       <div id="body"></div>
       <div class="bar">
+        <button class="ghost hidden" id="preview" type="button">미리보기</button>
         <button class="submit" id="save" type="submit">저장하기</button>
         <p class="note" id="left"></p>
         <p class="err hidden" id="err"></p>
@@ -76,12 +97,22 @@
     </div>
   </div>
 </div>
+<dialog id="pv" aria-labelledby="pvTitle">
+  <div class="pv-head"><h2 id="pvTitle"></h2></div>
+  <div class="pv-notice" id="pvNotice"></div>
+  <div class="pv-body" id="pvBody" tabindex="0"></div>
+  <div class="pv-foot">
+    <button class="ghost" id="pvBack" type="button"></button>
+    <button class="submit hidden" id="pvOk" type="button">이대로 저장</button>
+  </div>
+</dialog>
 <script>
 var API = 'https://qxcrtwtjhllsbgahfqvd.supabase.co/functions/v1/sf-client';
 var token = new URLSearchParams(location.search).get('t') || '';
 var $ = function(id) { return document.getElementById(id); };
 var fields = [];     // { spec, get() }
 var dirty = false;
+var form = null;     // 서버에서 받은 양식
 var struck = {};     // 기존 내용 중 체크(가로줄)한 문장
 
 function fail(text) {
@@ -226,7 +257,9 @@ function buildField(f, value) {
 }
 
 function render(d) {
+  form = d;
   var jd = d.kind === 'jd';
+  $('preview').classList.toggle('hidden', !jd);
   $('title').textContent = jd ? d.position : d.client + ' 채용 설문';
   $('sub').textContent = jd ? d.client + ' · JD 확인' : '약 5분 · 리니어스 헤드헌터 강연호';
   document.title = (jd ? d.position : '채용 설문') + ' | 리니어스';
@@ -251,6 +284,68 @@ function render(d) {
   $('form').classList.remove('hidden');
 }
 
+// 지금 입력한 값 (저장·미리보기 공통)
+function collect() {
+  var answers = {};
+  fields.forEach(function(f) { var v = f.get(); if (v) answers[f.spec.f] = v; });
+  var cut = Object.keys(struck);
+  if (cut.length) answers._struck = cut.join('\n');
+  return answers;
+}
+
+// 완성될 JD: 체크한 문장은 빼고, 추가한 줄은 항목 아래에 (팝업의 오더 복사와 같은 순서)
+function jdView(answers) {
+  var box = document.createDocumentFragment();
+  var head = [form.client, form.position];
+  if (answers.headcount) head.push(answers.headcount);
+  box.appendChild(el('p', 'pv-title', head.join('_')));
+  form.spec.sections.forEach(function(s) {
+    if (!s.h) return;
+    var ul = el('ul');
+    (s.items || []).forEach(function(i) {
+      if (i.f === 'headcount') return;
+      if (!i.f) { if (!struck[i.t]) ul.appendChild(el('li', '', i.t)); return; }
+      var v = answers[i.f];
+      if (v && i.list) v.split('\n').forEach(function(x) { ul.appendChild(el('li', '', x)); });
+      else if (v) ul.appendChild(el('li', '', v));
+      else if (!i.nolabel) { var li = el('li'); li.appendChild(el('span', 'pv-empty', '미입력 · ' + i.label)); ul.appendChild(li); }
+    });
+    if (!ul.children.length) { var none = el('li'); none.appendChild(el('span', 'pv-empty', '내용 없음')); ul.appendChild(none); }
+    box.appendChild(el('h3', '', s.h));
+    box.appendChild(ul);
+  });
+  if (answers.memo) {
+    var m = el('div', 'pv-memo');
+    m.appendChild(el('b', '', '수정 의견'));
+    m.appendChild(document.createTextNode(answers.memo));
+    box.appendChild(m);
+  }
+  return box;
+}
+
+function openPv(confirming) {
+  var answers = collect();
+  var empty = fields.filter(function(f) { return !f.get() && !f.spec.nolabel; }).length;
+  var cut = Object.keys(struck).length;
+  $('pvTitle').textContent = confirming ? '저장 전 최종 확인' : 'JD 미리보기';
+  var notice = $('pvNotice');
+  notice.textContent = '';
+  notice.appendChild(el('b', '', confirming ? '아래 내용으로 저장되어 담당 헤드헌터에게 전달됩니다.' : '현재 입력한 내용으로 저장하면 아래와 같이 작성됩니다.'));
+  var sub = [];
+  if (!confirming) sub.push('아직 저장되지 않았습니다');
+  if (cut) sub.push('체크한 내용 ' + cut + '건 제외');
+  if (empty) sub.push('미입력 ' + empty + '칸');
+  if (sub.length) notice.appendChild(el('small', '', sub.join(' · ')));
+  var body = $('pvBody');
+  body.textContent = '';
+  body.appendChild(jdView(answers));
+  body.scrollTop = 0;
+  $('pvBack').textContent = confirming ? '수정하기' : '닫기';
+  $('pvOk').classList.toggle('hidden', !confirming);
+  $('pv').showModal();
+  $(confirming ? 'pvOk' : 'pvBack').focus();
+}
+
 function showLinks(links) {
   var box = $('links');
   box.textContent = '';
@@ -266,30 +361,38 @@ function showLinks(links) {
   $('doneText').textContent = left ? '남은 항목 ' + left + '건도 이어서 작성하실 수 있습니다.' : '모두 저장되었습니다. 감사합니다. 확인 후 연락드리겠습니다.';
 }
 
-$('form').addEventListener('submit', function(e) {
-  e.preventDefault();
-  var answers = {};
-  fields.forEach(function(f) { var v = f.get(); if (v) answers[f.spec.f] = v; });
-  var cut = Object.keys(struck);
-  if (cut.length) answers._struck = cut.join('\n');
-  var btn = $('save');
+function save(btn) {
+  var answers = collect();
+  var label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
+  $('pvBack').disabled = true;
   $('err').classList.add('hidden');
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, answers: answers }) })
     .then(function(r) { return r.json().then(function(j) { if (!r.ok) throw new Error(j.error || 'server'); return j; }); })
     .then(function(j) {
       dirty = false;
+      if ($('pv').open) $('pv').close();
       showLinks(j.links);
       $('form').classList.add('hidden');
       $('done').classList.remove('hidden');
       window.scrollTo(0, 0);
     })
     .catch(function(x) {
-      btn.disabled = false; btn.textContent = '저장하기';
+      btn.disabled = false; btn.textContent = label;
+      $('pvBack').disabled = false;
+      if ($('pv').open) $('pv').close();
       $('err').textContent = x.message === 'closed' ? '이 링크는 마감되었습니다.' : '저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요.';
       $('err').classList.remove('hidden');
     });
+}
+
+$('form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (form.kind === 'jd') openPv(true); else save($('save'));
 });
+$('preview').addEventListener('click', function() { openPv(false); });
+$('pvBack').addEventListener('click', function() { $('pv').close(); });
+$('pvOk').addEventListener('click', function() { save($('pvOk')); });
 window.addEventListener('beforeunload', function(e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
 if (!/^[0-9a-f-]{36}$/i.test(token)) fail('링크가 올바르지 않습니다. 메일의 링크를 다시 눌러 주세요.');
