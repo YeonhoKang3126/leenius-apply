@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>채용 공고 서식 | 리니어스</title>
+<style>
+  body { margin: 0; background: #eef1f5; color: #333; font: 14px/1.7 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  .guide { max-width: 680px; margin: 24px auto 0; padding: 16px 20px; background: #fff; border-radius: 12px; border-left: 4px solid rgb(52,68,94); box-sizing: border-box; }
+  .guide h1 { font-size: 17px; margin: 0 0 6px; color: rgb(52,68,94); }
+  .guide p { margin: 0; }
+  .guide button { margin-top: 12px; padding: 9px 18px; border: 0; border-radius: 8px; background: rgb(52,68,94); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+  .guide button:focus-visible { outline: 2px solid rgb(61,86,124); outline-offset: 2px; }
+  .ok { margin-left: 10px; color: #3f6553; font-weight: 700; }
+  #card { max-width: 700px; margin: 0 auto; padding: 0 10px 40px; box-sizing: border-box; }
+  @media (max-width: 720px) { .guide { margin: 16px 16px 0; } #card { padding: 0 6px 32px; } }
+</style>
+</head>
+<body>
+<div class="guide">
+  <h1 id="head">채용 공고 서식</h1>
+  <p id="note">불러오는 중입니다.</p>
+  <button id="copy" type="button" hidden>서식 복사</button><span class="ok" id="ok" role="status"></span>
+</div>
+<div id="card"></div>
+<script>
+var API = 'https://qxcrtwtjhllsbgahfqvd.supabase.co/functions/v1/sf-job';
+var token = new URLSearchParams(location.search).get('t') || '';
+var note = document.getElementById('note'), card = document.getElementById('card'), btn = document.getElementById('copy'), ok = document.getElementById('ok');
+function fail() { note.textContent = '공고를 찾지 못했습니다. 링크를 다시 확인해 주세요.'; }
+fetch(API + '?t=' + encodeURIComponent(token))
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(d) {
+    if (!d || !d.html) return fail();
+    document.getElementById('head').textContent = d.title;
+    note.textContent = '아래 카드가 복사될 모양입니다. [서식 복사]를 누른 뒤 메일 본문에 붙여 넣어 쓰세요 (⌘V / Ctrl+V). 이름과 연락처는 비어 있으니 붙여 넣은 뒤 채워 주시고, 메일 기본 서명은 꺼 두세요.';
+    card.innerHTML = d.html;
+    btn.hidden = false;
+  })
+  .catch(fail);
+btn.onclick = async function() {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([card.innerHTML], { type: 'text/html' }), 'text/plain': new Blob([card.innerText], { type: 'text/plain' }) })]);
+  } catch (e) {
+    var r = document.createRange(); r.selectNodeContents(card); var s = getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('copy'); s.removeAllRanges();
+  }
+  ok.textContent = '복사했습니다.';
+};
+</script>
+</body>
+</html>
