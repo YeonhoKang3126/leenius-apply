@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>searchFlow</title>
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="searchFlow">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#34445e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--navy:#34445e;--blue:#3d567c;--copper:#8a5a44;--ink:#2b2f36;--sub:#5f6773;--line:#e2e6ec;--bg:#f5f6f8;--surface:#fff;--error:#b3261e;--ok:#2e6b4f;--on:#fff}
+@media (prefers-color-scheme:dark){:root{--blue:#8fb0dc;--copper:#d3a68e;--ink:#e8eaee;--sub:#a3abb7;--line:#343a44;--bg:#16191e;--surface:#20242b;--error:#f2a59f;--ok:#8fd0b0;--on:#16191e}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 12px;display:flex;align-items:center;gap:8px;min-height:56px}
+header h1{font-size:17px;font-weight:700;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:none;border:0;color:#fff;font:inherit;font-size:15px;padding:8px;margin:-8px 0;min-height:44px}
+main{padding:12px 16px calc(env(safe-area-inset-bottom) + 96px);max-width:640px;margin:0 auto}
+.pc{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--sub);padding:4px 0 12px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.dot.off{background:var(--error)}
+.warn{background:var(--surface);border-left:3px solid var(--error);padding:10px 12px;border-radius:6px;font-size:14px;margin-bottom:12px}
+h2{font-size:13px;font-weight:600;color:var(--sub);margin:20px 0 8px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.box+.box{margin-top:8px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 14px;color:inherit;font:inherit;min-height:60px}
+.row:first-child{border-top:0}
+.t{font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.s{font-size:14px;color:var(--sub);margin-top:2px;overflow-wrap:anywhere}
+.s b{color:var(--copper);font-weight:600}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:10px 0 8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue)}
+.step{padding:14px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0;padding-top:0}
+.step:last-child{padding-bottom:0}
+.btn{display:block;width:100%;min-height:48px;margin-top:10px;border:1.5px solid var(--blue);border-radius:10px;background:var(--blue);color:var(--on);font:600 16px/1.2 inherit;font-family:inherit;padding:10px}
+.btn.sec{background:none;color:var(--blue)}
+.btn:disabled{opacity:.5}
+.two{display:flex;gap:8px}.two .btn{flex:1}
+label{display:block;font-size:14px;color:var(--sub);margin-top:10px}
+input,select{display:block;width:100%;height:48px;margin-top:4px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:16px inherit;font-family:inherit}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.c{padding:12px 0;border-top:1px solid var(--line)}
+.c:first-child{border-top:0;padding-top:0}
+.c a{color:var(--blue);font-size:14px;display:inline-block;padding:6px 0}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);max-width:608px;margin:auto;background:var(--navy);color:#fff;border-radius:10px;padding:12px 14px;font-size:15px;z-index:9;display:none;box-shadow:0 8px 24px rgba(30,40,55,.25)}
+#toast.err{background:#8c1d18}
+.login{max-width:400px;margin:40px auto 0}
+.err{color:var(--error);font-size:14px;margin-top:8px}
+.empty{color:var(--sub);font-size:15px;padding:16px 14px}
+</style>
+</head>
+<body>
+<header><button id="back" hidden aria-label="뒤로">‹ 목록</button><h1 id="title">searchFlow</h1><button id="reload">새로고침</button></header>
+<main id="main"></main>
+<div id="toast" role="status"></div>
+<script>
+'use strict';
+const SB = 'https://qxcrtwtjhllsbgahfqvd.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4Y3J0d3RqaGxsc2JnYWhmcXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMxMDUsImV4cCI6MjA2NzAzOTEwNX0.0hd5bIoy1YXWdXM99MoeikrJkSYyAnsKnxLCBgG_5Ms';
+const OFFLINE_MS = 2 * 60000;
+const $ = function(id) { return document.getElementById(id); };
+const esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+const num = function(n) { return Number(n || 0).toLocaleString('ko-KR'); };
+
+let session = null, state = null, device = '', view = null, must = {}, sending = false, loadError = '';
+try { session = JSON.parse(localStorage.getItem('sfApp') || 'null'); } catch (e) { session = null; }
+function saveSession(s) {
+  session = s ? { access_token: s.access_token, refresh_token: s.refresh_token, expires: Date.now() + (s.expires_in || 3600) * 1000, uid: s.user && s.user.id } : null;
+  try { if (session) localStorage.setItem('sfApp', JSON.stringify(session)); else localStorage.removeItem('sfApp'); } catch (e) {}
+}
+async function auth(path, body) {
+  const r = await fetch(SB + '/auth/v1/' + path, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json().catch(function() { return {}; });
+  if (!r.ok) throw new Error(r.status === 400 ? '메일 또는 비밀번호를 확인해 주세요' : '로그인 오류 ' + r.status);
+  return d;
+}
+async function token() {
+  if (Date.now() > session.expires - 60000) {
+    try { saveSession(await auth('token?grant_type=refresh_token', { refresh_token: session.refresh_token })); }
+    catch (e) { if (navigator.onLine) { saveSession(null); render(); } throw new Error('다시 로그인해 주세요'); }
+  }
+  return session.access_token;
+}
+async function rest(path, opts) {
+  opts = opts || {};
+  const r = await fetch(SB + '/rest/v1/' + path, { method: opts.method || 'GET',
+    headers: Object.assign({ apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, opts.headers || {}),
+    body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const text = await r.text();
+  if (!r.ok) throw new Error('서버 오류 ' + r.status);
+  return text ? JSON.parse(text) : null;
+}
+
+async function load() {
+  if (!session) return;
+  try {
+    const rows = await rest('sf_app_state?select=device,data');
+    const best = (rows || []).sort(function(a, b) { return (b.data.at || 0) - (a.data.at || 0); })[0];
+    state = best ? best.data : null; device = best ? best.device : ''; loadError = '';
+  } catch (e) { loadError = e.message; }
+  if (!sending) render();
+}
+async function loadMust(id) {
+  try {
+    const rows = await rest('sf_sync?select=c:data->candidates&doc_key=eq.' + encodeURIComponent('order:' + id + ':data'));
+    must[id] = ((rows[0] && rows[0].c) || []).filter(function(c) { return c.detail && c.detail.verdict === '필수'; });
+  } catch (e) { must[id] = null; }
+  render();
+}
+
+function toast(text, err, keep) {
+  const t = $('toast');
+  t.textContent = text; t.className = err ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toast.t);
+  if (!keep) toast.t = setTimeout(function() { t.style.display = 'none'; }, 6000);
+}
+// 명령을 넣고 PC가 처리할 때까지 결과를 기다림
+async function send(cmd, orderId, args) {
+  if (sending) return;
+  sending = true; render();
+  try {
+    toast('PC에 전달하는 중입니다. 30초 안에 처리됩니다.', false, true);
+    const rows = await rest('sf_commands', { method: 'POST', headers: { Prefer: 'return=representation' },
+      body: { user_id: session.uid, cmd: cmd, order_id: orderId || '', status: 'pending', args: Object.assign({ app: true }, args || {}) } });
+    const id = rows[0].id;
+    for (let i = 0; i < 40; i++) {
+      await new Promise(function(r) { setTimeout(r, 4000); });
+      const c = (await rest('sf_commands?select=status,result&id=eq.' + id))[0];
+      if (c && (c.status === 'done' || c.status === 'failed')) { toast(c.result || '처리했습니다.', c.status === 'failed'); return; }
+      if (c && c.status === 'taken') toast('PC에서 처리하는 중입니다.', false, true);
+    }
+    toast('PC 응답을 기다리는 중입니다. 잠시 뒤 새로고침해 주세요.', true);
+  } catch (e) { toast(e.message, true); }
+  finally { sending = false; await load(); }
+}
+
+function online() { return !!state && Date.now() - state.at < OFFLINE_MS; }
+function ago(t) { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? '방금' : m < 60 ? m + '분 전' : m < 1440 ? Math.round(m / 60) + '시간 전' : Math.round(m / 1440) + '일 전'; }
+function stateLine(o) {
+  if (o.running) return '수집 중 · ' + num(o.collected) + '명';
+  if (state.eval && state.eval.orderId === o.id && state.eval.active) return state.eval.waiting ? '평가 멈춤 · 확인 필요' : '명단 평가 중';
+  const bits = [];
+  if (o.ap) bits.push('자동운전 ' + o.ap);
+  if (o.night === 'wait') bits.push('밤 수집 대기');
+  if (!o.analyzed) bits.push('분석 전');
+  else if (!o.plan) bits.push('전략 전');
+  else if (o.collected) bits.push('수집 ' + num(o.collected) + '명' + (o.left ? ' · 남은 라운드 ' + o.left : ''));
+  else bits.push('라운드 ' + o.left + '개 대기');
+  return bits.join(' · ');
+}
+function btn(label, cmd, id, cls, extra) {
+  return '<button class="btn ' + (cls || '') + '" data-cmd="' + cmd + '" data-id="' + esc(id || '') + '"' + (extra || '') + (sending || !online() ? ' disabled' : '') + '>' + esc(label) + '</button>';
+}
+function evalBox(e, o) {
+  const pct = e.goal ? Math.min(100, Math.round(e.must / e.goal * 100)) : 0;
+  return (o ? '<div class="t">' + esc(o.title) + '</div>' : '') + '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="s">필수 <b>' + e.must + '</b> / ' + e.goal + '명 · 1차 ' + num(e.first) + '명 · 정밀 ' + num(e.detail) + '명</div>' +
+    (e.why ? '<div class="s">' + esc(e.why) + '</div>' : '') +
+    (e.active && e.waiting ? '<div class="two">' + btn('계속 진행', 'poolgo', e.orderId) + btn('여기서 종료', 'poolend', e.orderId, 'sec') + '</div>' :
+      e.active ? '' : '<div class="s">끝남</div>');
+}
+
+function loginView() {
+  $('main').innerHTML = '<form class="login box" id="lf"><div class="t">확장 프로그램 동기화 계정으로 로그인</div>' +
+    '<label>메일<input id="em" type="email" autocomplete="username" required></label>' +
+    '<label>비밀번호<input id="pw" type="password" autocomplete="current-password" required></label>' +
+    '<div class="err" id="le" role="alert"></div><button class="btn">로그인</button></form>';
+  $('lf').onsubmit = async function(ev) {
+    ev.preventDefault();
+    try { saveSession(await auth('token?grant_type=password', { email: $('em').value.trim(), password: $('pw').value })); render(); load(); }
+    catch (e) { $('le').textContent = e.message; }
+  };
+}
+function homeView() {
+  let h = '';
+  if (loadError) h += '<div class="warn">' + esc(loadError) + '</div>';
+  if (!state) { $('main').innerHTML = h + '<div class="box">PC 신호를 기다리고 있습니다. 확장 프로그램을 새로고침한 PC가 켜져 있으면 30초 안에 나타납니다.</div>' + foot(); return; }
+  h += '<div class="pc"><span class="dot' + (online() ? '' : ' off') + '"></span>' + esc(device) + (online() ? ' 연결됨' : ' 응답 없음') + ' · ' + ago(state.at) + '</div>';
+  if (!online()) h += '<div class="warn">PC가 꺼졌거나 크롬이 닫혔을 수 있습니다. 지금은 명령을 보낼 수 없습니다.</div>';
+  if (state.bot) h += '<div class="warn">사람인 보안 확인 화면이 떴습니다. PC에서 직접 확인해 주세요.</div>';
+  const live = [];
+  if (state.eval) live.push('<div class="box">' + evalBox(state.eval, state.orders.find(function(o) { return o.id === state.eval.orderId; }) || { title: '명단 평가' }) + '</div>');
+  state.orders.filter(function(o) { return o.running; }).forEach(function(o) {
+    live.push('<div class="box"><div class="t">' + esc(o.title) + '</div><div class="s">수집 중 · <b>' + num(o.collected) + '</b>명 · 남은 라운드 ' + o.left + ' / ' + o.rounds + '</div>' + btn('수집 중지', 'stop', o.id, 'sec') + '</div>');
+  });
+  if (live.length) h += '<h2>진행 중</h2>' + live.join('');
+  if (state.orders.some(function(o) { return o.ap; })) h += '<h2>자동운전</h2><div class="box"><div class="s">' + (state.apPaused ? '일시정지됨' : '돌아가는 중') + '</div>' +
+    (state.apPaused ? btn('자동운전 재개', 'apresume', '') : btn('자동운전 일시정지', 'apstop', '', 'sec')) + '</div>';
+  h += '<h2>오더 ' + state.orders.length + '건</h2><div class="list">' + (state.orders.map(function(o) {
+    return '<button class="row" data-open="' + esc(o.id) + '"><div class="t">' + esc(o.title) + '</div><div class="s">' + esc(stateLine(o)) + (o.must ? ' · 필수 <b>' + o.must + '</b>' : '') + '</div></button>';
+  }).join('') || '<div class="empty">열려 있는 오더가 없습니다.</div>') + '</div>' + foot();
+  $('main').innerHTML = h;
+}
+function foot() { return '<button class="btn sec" id="out" style="margin-top:24px">로그아웃</button>'; }
+
+function orderView(o) {
+  const hours = Array.from({ length: 24 }, function(_, i) { return '<option value="' + i + '"' + (i === state.startHour ? ' selected' : '') + '>' + i + '시</option>'; }).join('');
+  const e = state.eval && state.eval.orderId === o.id ? state.eval : null;
+  let h = '';
+  if (!online()) h += '<div class="warn">PC 응답이 없어 명령을 보낼 수 없습니다.</div>';
+  h += '<div class="box">';
+  h += '<div class="step"><div class="t">1. 전략</div>';
+  if (!o.analyzed) h += '<div class="s">PC에서 오더 분석을 먼저 해 주세요.</div>';
+  else if (o.plan) h += '<div class="s">라운드 ' + o.rounds + '개 · 남은 라운드 ' + o.left + '개</div>';
+  else h += '<div class="s">키워드와 라운드를 자동으로 고릅니다.</div>' + btn('전략 만들기', 'plan', o.id);
+  h += '</div><div class="step"><div class="t">2. 전체 수집</div><div class="s">모은 명단 <b>' + num(o.collected) + '</b>명</div>';
+  if (o.running) h += btn('수집 중지', 'stop', o.id, 'sec');
+  else if (o.plan && o.left) {
+    h += btn(o.collected ? '지금 이어서 수집' : '지금 전체 수집', 'collect', o.id);
+    if (o.night === 'wait') h += '<div class="s" style="margin-top:10px">밤 수집 대기 중 (' + state.startHour + '시 시작)</div>' + btn('밤 수집 취소', 'nightoff', o.id, 'sec');
+    else h += '<label>밤 수집 시작 시각<select id="hour">' + hours + '</select></label>' + btn('밤 수집 등록', 'nighton', o.id, 'sec');
+  }
+  h += '</div><div class="step"><div class="t">3. 명단 평가</div>';
+  if (e && e.active) h += evalBox(e);
+  else if (o.collected && !o.running && !o.ranked) h += '<div class="s">유사도 순위가 아직 없습니다.</div>' + btn('순위 계산', 'poolrank', o.id);
+  else if (o.ranked && !o.running) h += '<label>필수 목표 인원<input id="goal" type="number" inputmode="numeric" min="1" max="500" value="' + (state.goal || 10) + '"></label>' + btn('명단 평가 시작', 'poolstart', o.id) + '<div class="s" style="margin-top:6px">API 비용이 듭니다. 자동 제안은 하지 않습니다.</div>';
+  else h += '<div class="s">수집이 끝나면 시작할 수 있습니다.</div>';
+  h += '</div><div class="step"><div class="t">자동운전</div>' + (o.ap ? '<div class="s">' + esc(o.ap) + '</div>' : (o.analyzed ? btn('자동운전 등록', 'apadd', o.id, 'sec') : '<div class="s">오더 분석 뒤 등록할 수 있습니다.</div>')) + '</div></div>';
+  h += '<h2>필수 추천 후보 ' + o.must + '명</h2><div class="box">';
+  const list = must[o.id];
+  if (list === undefined) h += '<div class="s">불러오는 중…</div>';
+  else if (list === null) h += '<div class="s">불러오지 못했습니다.</div>';
+  else if (!list.length) h += '<div class="s">아직 없습니다.</div>';
+  else h += list.map(function(c) {
+    const url = /^https:\/\//.test(c.url || '') ? c.url : '';
+    return '<div class="c"><div class="t">' + esc(c.realName || c.name) + ' <span class="s">' + esc(c.genderAge) + ' · ' + esc(c.career) + '</span></div>' +
+      '<div class="s">' + esc(c.detail.reason || c.reason) + '</div>' + (c.offered ? '<div class="s"><b>제안 완료</b></div>' : '') +
+      (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">이력서 열기</a>' : '') + '</div>';
+  }).join('');
+  $('main').innerHTML = h + '</div>';
+}
+
+function render() {
+  const o = view && state ? state.orders.find(function(x) { return x.id === view; }) : null;
+  if (view && !o) view = null;
+  $('back').hidden = !o;
+  $('title').textContent = o ? o.title : 'searchFlow';
+  $('reload').hidden = !session;
+  // 입력 중인 값은 다시 그려도 유지
+  const keep = { goal: $('goal') && $('goal').value, hour: $('hour') && $('hour').value };
+  if (!session) loginView(); else if (o) orderView(o); else homeView();
+  if (keep.goal && $('goal')) $('goal').value = keep.goal;
+  if (keep.hour && $('hour')) $('hour').value = keep.hour;
+}
+
+document.addEventListener('click', function(ev) {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  if (b.id === 'out') { saveSession(null); state = null; view = null; render(); return; }
+  if (b.dataset.open) { view = b.dataset.open; scrollTo(0, 0); render(); loadMust(view); return; }
+  const cmd = b.dataset.cmd;
+  if (!cmd) return;
+  const args = {};
+  if (cmd === 'poolstart') {
+    const g = parseInt($('goal').value, 10);
+    if (!(g >= 1 && g <= 500)) { toast('필수 목표는 1~500명으로 적어 주세요', true); return; }
+    if (!confirm('필수 ' + g + '명을 목표로 명단 평가를 시작할까요?')) return;
+    args.goal = g;
+  }
+  if (cmd === 'nighton') args.startHour = parseInt($('hour').value, 10);
+  send(cmd, b.dataset.id, args);
+});
+$('back').onclick = function() { view = null; scrollTo(0, 0); render(); };
+$('reload').onclick = function() { load(); if (view) loadMust(view); };
+document.addEventListener('visibilitychange', function() { if (!document.hidden) load(); });
+setInterval(function() { if (!document.hidden) load(); }, 15000);
+render(); load();
+</script>
+</body>
+</html>
