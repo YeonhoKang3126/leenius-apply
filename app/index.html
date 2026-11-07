@@ -70,7 +70,7 @@ const $ = function(id) { return document.getElementById(id); };
 const esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 const num = function(n) { return Number(n || 0).toLocaleString('ko-KR'); };
 
-let session = null, state = null, device = '', view = null, must = {}, sending = false, loadError = '';
+let skipped = new Set(), session = null, state = null, device = '', view = null, must = {}, sending = false, loadError = '';
 try { session = JSON.parse(localStorage.getItem('sfApp') || 'null'); } catch (e) { session = null; }
 function saveSession(s) {
   session = s ? { access_token: s.access_token, refresh_token: s.refresh_token, expires: Date.now() + (s.expires_in || 3600) * 1000, uid: s.user && s.user.id } : null;
@@ -105,6 +105,7 @@ async function load() {
     const rows = await rest('sf_app_state?select=device,data');
     const best = (rows || []).sort(function(a, b) { return (b.data.at || 0) - (a.data.at || 0); })[0];
     state = best ? best.data : null; device = best ? best.device : ''; loadError = '';
+    skipped = new Set((await rest('sf_board_seen?select=post&skipped=is.true') || []).map(function(x) { return x.post; }));
   } catch (e) { loadError = e.message; }
   if (!sending) render();
 }
@@ -131,7 +132,7 @@ async function send(cmd, orderId, args) {
     const rows = await rest('sf_commands', { method: 'POST', headers: { Prefer: 'return=representation' },
       body: { user_id: session.uid, cmd: cmd, order_id: orderId || '', status: 'pending', args: Object.assign({ app: true }, args || {}) } });
     const id = rows[0].id;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 75; i++) {
       await new Promise(function(r) { setTimeout(r, 4000); });
       const c = (await rest('sf_commands?select=status,result&id=eq.' + id))[0];
       if (c && (c.status === 'done' || c.status === 'failed')) { toast(c.result || '처리했습니다.', c.status === 'failed'); return; }
@@ -149,6 +150,7 @@ function stateLine(o) {
   if (state.eval && state.eval.orderId === o.id && state.eval.active) return state.eval.waiting ? '평가 멈춤 · 확인 필요' : '명단 평가 중';
   const bits = [];
   if (o.ap) bits.push('자동운전 ' + o.ap);
+  if (o.queued) bits.push('수집 차례 대기');
   if (o.night === 'wait') bits.push('밤 수집 대기');
   if (!o.analyzed) bits.push('분석 전');
   else if (!o.plan) bits.push('전략 전');
@@ -186,6 +188,12 @@ function homeView() {
   h += '<div class="pc"><span class="dot' + (online() ? '' : ' off') + '"></span>' + esc(device) + (online() ? ' 연결됨' : ' 응답 없음') + ' · ' + ago(state.at) + '</div>';
   if (!online()) h += '<div class="warn">PC가 꺼졌거나 크롬이 닫혔을 수 있습니다. 지금은 명령을 보낼 수 없습니다.</div>';
   if (state.bot) h += '<div class="warn">사람인 보안 확인 화면이 떴습니다. PC에서 직접 확인해 주세요.</div>';
+  if (state.boardOut) h += '<div class="warn">하이웍스 로그인이 풀려 새 오더를 확인할 수 없습니다. PC에서 로그인해 주세요.</div>';
+  const board = (state.board || []).filter(function(p) { return !skipped.has(p.post); });
+  if (board.length) h += '<h2>게시판 새 오더 ' + board.length + '건</h2>' + board.map(function(p) {
+    return '<div class="box"><div class="t">' + esc(p.title) + '</div><div class="s">' + esc(String(p.at).slice(0, 10)) + '</div><div class="two">' +
+      btn('가져오기 + 수집', 'boardgo', p.post) + btn('가져오기만', 'boardget', p.post, 'sec') + '</div><button class="btn sec" data-skip="' + esc(p.post) + '">무시 (다시 표시하지 않음)</button></div>';
+  }).join('');
   const live = [];
   if (state.eval) live.push('<div class="box">' + evalBox(state.eval, state.orders.find(function(o) { return o.id === state.eval.orderId; }) || { title: '명단 평가' }) + '</div>');
   state.orders.filter(function(o) { return o.running; }).forEach(function(o) {
@@ -256,6 +264,14 @@ document.addEventListener('click', function(ev) {
   if (!b) return;
   if (b.id === 'out') { saveSession(null); state = null; view = null; render(); return; }
   if (b.dataset.open) { view = b.dataset.open; scrollTo(0, 0); render(); loadMust(view); return; }
+  if (b.dataset.skip) {
+    if (!confirm('이 오더를 무시할까요? 앱과 알림에 다시 나오지 않습니다.')) return;
+    const post = b.dataset.skip;
+    skipped.add(post); render();
+    rest('sf_board_seen?on_conflict=user_id,post', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: [{ user_id: session.uid, post: post, skipped: true }] })
+      .catch(function(e) { skipped.delete(post); render(); toast(e.message, true); });
+    return;
+  }
   const cmd = b.dataset.cmd;
   if (!cmd) return;
   const args = {};
