@@ -55,6 +55,24 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .login{max-width:400px;margin:40px auto 0}
 .err{color:var(--error);font-size:14px;margin-top:8px}
 .empty{color:var(--sub);font-size:15px;padding:16px 14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.stat .ln{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--sub);min-height:28px}
+.stat .ln b{color:var(--ink);font-weight:600}
+.stat .ln .r{margin-left:auto;font-size:13px}
+.dot.warn{background:#c98a1b}
+.dot.live{animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,107,79,.55)}70%{box-shadow:0 0 0 8px rgba(46,107,79,0)}100%{box-shadow:0 0 0 0 rgba(46,107,79,0)}}
+.bar.run i{background-image:linear-gradient(45deg,rgba(255,255,255,.35) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.35) 50%,rgba(255,255,255,.35) 75%,transparent 75%);background-size:16px 16px;animation:stripe 1s linear infinite;min-width:12%;transition:width .6s ease}
+@keyframes stripe{from{background-position:0 0}to{background-position:16px 0}}
+.live .big{font-size:26px;font-weight:700;color:var(--copper);font-variant-numeric:tabular-nums;line-height:1.2}
+.live .big small{font-size:14px;color:var(--sub);font-weight:400;margin-left:6px}
+.bump{animation:bump .9s ease}
+@keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.12)}100%{transform:scale(1)}}
+.plus{color:var(--ok);font-weight:600;font-size:14px;margin-left:8px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-1px;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mono{font-size:13px;color:var(--sub);background:var(--bg);border-radius:6px;padding:6px 8px;margin-top:8px;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.dot.live,.bar.run i,.bump,.spin{animation:none}}
 </style>
 </head>
 <body>
@@ -170,6 +188,37 @@ function evalBox(e, o) {
       e.active ? '' : '<div class="s">끝남</div>');
 }
 
+// 연결·로그인 상태 줄 (PC 신호 · 사람인 · 하이웍스)
+function secAgo(t) { const s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 60 ? s + '초 전' : ago(t); }
+function siteLine(name, x) {
+  if (!x) return '<div class="ln"><span class="dot warn"></span>' + name + ' <b>확인 전</b><span class="r">20분마다 확인</span></div>';
+  return '<div class="ln"><span class="dot' + (x.ok ? '' : ' off') + '"></span>' + name + ' <b>' + (x.ok ? '로그인됨' : '로그인 풀림') + '</b><span class="r" data-ago="' + x.at + '">' + ago(x.at) + ' 확인</span></div>';
+}
+function statusBox() {
+  const on = online(), lg = state.login || {};
+  let h = '<div class="stat"><div class="ln"><span class="dot' + (on ? ' live' : ' off') + '"></span>' + esc(device) + ' <b>' + (on ? '연결됨' : '응답 없음') + '</b><span class="r" data-sago="' + state.at + '">' + secAgo(state.at) + '</span></div>' +
+    siteLine('사람인', lg.saramin) + siteLine('하이웍스', lg.hiworks) + '</div>';
+  if (state.waitLogin) h += '<div class="warn">🔒 사람인 로그인을 기다리는 중 — ' + esc(state.waitLogin.cmd) + (state.waitLogin.title ? ' · ' + esc(state.waitLogin.title) : '') +
+    '<br>PC에서 로그인하면 3분 안에 자동으로 시작합니다.</div>';
+  return h;
+}
+// 수집 진행 상자: 줄무늬가 흐르는 막대 + 이번 실행 인원 + 지금 검색 중인 조합 + 마지막 로그 + PC 신호 초 단위
+let lastCount = {};
+function liveBox(o, withTitle) {
+  const p = o.prog || {};
+  const pct = o.rounds ? Math.round((p.done || (o.rounds - o.left)) / o.rounds * 100) : 0;
+  const prev = lastCount[o.id]; lastCount[o.id] = o.collected;
+  const bump = prev != null && o.collected > prev;
+  const stale = p.beat && Date.now() - p.beat > 90000;
+  return '<div class="live">' + (withTitle ? '<div class="t">' + esc(o.title) + '</div>' : '') +
+    '<div class="big' + (bump ? ' bump' : '') + '">' + num(o.collected) + '<small>명 모음</small>' + (p.fresh ? '<span class="plus">이번 실행 +' + num(p.fresh) + '</span>' : '') + '</div>' +
+    '<div class="bar run"><i style="width:' + Math.max(pct, 3) + '%"></i></div>' +
+    '<div class="s"><span class="spin"></span>' + (p.collect === false ? '서칭' : '수집') + ' 중 · 라운드 ' + num(p.round || 0) + ' · 남은 ' + num(o.left) + ' / ' + num(o.rounds) + '</div>' +
+    (p.combo ? '<div class="s">지금 검색: ' + esc(p.combo) + '</div>' : '') +
+    (p.log ? '<div class="mono">' + esc(p.log) + '</div>' : '') +
+    (p.beat ? '<div class="s" style="margin-top:6px">' + (stale ? '⚠️ PC 진행 신호가 늦어지고 있습니다 · ' : 'PC 진행 신호 ') + '<span data-sago="' + p.beat + '">' + secAgo(p.beat) + '</span></div>' : '') +
+    '</div>';
+}
 function loginView() {
   $('main').innerHTML = '<form class="login box" id="lf"><div class="t">확장 프로그램 동기화 계정으로 로그인</div>' +
     '<label>메일<input id="em" type="email" autocomplete="username" required></label>' +
@@ -185,7 +234,7 @@ function homeView() {
   let h = '';
   if (loadError) h += '<div class="warn">' + esc(loadError) + '</div>';
   if (!state) { $('main').innerHTML = h + '<div class="box">PC 신호를 기다리고 있습니다. 확장 프로그램을 새로고침한 PC가 켜져 있으면 30초 안에 나타납니다.</div>' + foot(); return; }
-  h += '<div class="pc"><span class="dot' + (online() ? '' : ' off') + '"></span>' + esc(device) + (online() ? ' 연결됨' : ' 응답 없음') + ' · ' + ago(state.at) + '</div>';
+  h += statusBox();
   if (!online()) h += '<div class="warn">PC가 꺼졌거나 크롬이 닫혔을 수 있습니다. 지금은 명령을 보낼 수 없습니다.</div>';
   if (state.bot) h += '<div class="warn">사람인 보안 확인 화면이 떴습니다. PC에서 직접 확인해 주세요.</div>';
   if (state.boardOut) h += '<div class="warn">하이웍스 로그인이 풀려 새 오더를 확인할 수 없습니다. PC에서 로그인해 주세요.</div>';
@@ -197,7 +246,7 @@ function homeView() {
   const live = [];
   if (state.eval) live.push('<div class="box">' + evalBox(state.eval, state.orders.find(function(o) { return o.id === state.eval.orderId; }) || { title: '명단 평가' }) + '</div>');
   state.orders.filter(function(o) { return o.running; }).forEach(function(o) {
-    live.push('<div class="box"><div class="t">' + esc(o.title) + '</div><div class="s">수집 중 · <b>' + num(o.collected) + '</b>명 · 남은 라운드 ' + o.left + ' / ' + o.rounds + '</div>' + btn('수집 중지', 'stop', o.id, 'sec') + '</div>');
+    live.push('<div class="box">' + liveBox(o, true) + btn('수집 중지', 'stop', o.id, 'sec') + '</div>');
   });
   if (live.length) h += '<h2>진행 중</h2>' + live.join('');
   if (state.orders.some(function(o) { return o.ap; })) h += '<h2>자동운전</h2><div class="box"><div class="s">' + (state.apPaused ? '일시정지됨' : '돌아가는 중') + '</div>' +
@@ -213,15 +262,17 @@ function orderView(o) {
   const hours = Array.from({ length: 24 }, function(_, i) { return '<option value="' + i + '"' + (i === state.startHour ? ' selected' : '') + '>' + i + '시</option>'; }).join('');
   const e = state.eval && state.eval.orderId === o.id ? state.eval : null;
   let h = '';
+  h += statusBox();
   if (!online()) h += '<div class="warn">PC 응답이 없어 명령을 보낼 수 없습니다.</div>';
   h += '<div class="box">';
   h += '<div class="step"><div class="t">1. 전략</div>';
   if (!o.analyzed) h += '<div class="s">PC에서 오더 분석을 먼저 해 주세요.</div>';
   else if (o.plan) h += '<div class="s">라운드 ' + o.rounds + '개 · 남은 라운드 ' + o.left + '개</div>';
   else h += '<div class="s">키워드와 라운드를 자동으로 고릅니다.</div>' + btn('전략 만들기', 'plan', o.id);
-  h += '</div><div class="step"><div class="t">2. 전체 수집</div><div class="s">모은 명단 <b>' + num(o.collected) + '</b>명</div>';
-  if (o.running) h += btn('수집 중지', 'stop', o.id, 'sec');
-  else if (o.plan && o.left) {
+  h += '</div><div class="step"><div class="t">2. 전체 수집</div>';
+  if (o.running) h += liveBox(o, false) + btn('수집 중지', 'stop', o.id, 'sec');
+  else h += '<div class="s">모은 명단 <b>' + num(o.collected) + '</b>명</div>';
+  if (!o.running && o.plan && o.left) {
     h += btn(o.collected ? '지금 이어서 수집' : '지금 전체 수집', 'collect', o.id);
     if (o.night === 'wait') h += '<div class="s" style="margin-top:10px">밤 수집 대기 중 (' + state.startHour + '시 시작)</div>' + btn('밤 수집 취소', 'nightoff', o.id, 'sec');
     else h += '<label>밤 수집 시작 시각<select id="hour">' + hours + '</select></label>' + btn('밤 수집 등록', 'nighton', o.id, 'sec');
@@ -287,7 +338,15 @@ document.addEventListener('click', function(ev) {
 $('back').onclick = function() { view = null; scrollTo(0, 0); render(); };
 $('reload').onclick = function() { load(); if (view) loadMust(view); };
 document.addEventListener('visibilitychange', function() { if (!document.hidden) load(); });
-setInterval(function() { if (!document.hidden) load(); }, 15000);
+// 수집 중이면 5초마다, 아니면 15초마다 새로 읽음. '○초 전'은 1초마다 갱신
+let lastLoad = 0;
+setInterval(function() {
+  if (document.hidden || sending) return;
+  const running = state && (state.orders || []).some(function(o) { return o.running; });
+  if (Date.now() - lastLoad >= (running ? 5000 : 15000)) { lastLoad = Date.now(); load(); }
+  document.querySelectorAll('[data-sago]').forEach(function(el) { el.textContent = secAgo(+el.dataset.sago); });
+  document.querySelectorAll('[data-ago]').forEach(function(el) { el.textContent = ago(+el.dataset.ago) + ' 확인'; });
+}, 1000);
 render(); load();
 </script>
 </body>
