@@ -83,7 +83,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 'use strict';
 const SB = 'https://qxcrtwtjhllsbgahfqvd.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4Y3J0d3RqaGxsc2JnYWhmcXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMxMDUsImV4cCI6MjA2NzAzOTEwNX0.0hd5bIoy1YXWdXM99MoeikrJkSYyAnsKnxLCBgG_5Ms';
-const OFFLINE_MS = 2 * 60000;
+const OFFLINE_MS = 12 * 60000;   // PC가 Cloudflare 중계를 쓰면 Supabase에는 10분마다 올림 (2026-11-13)
 const $ = function(id) { return document.getElementById(id); };
 const esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 const num = function(n) { return Number(n || 0).toLocaleString('ko-KR'); };
