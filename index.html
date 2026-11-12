@@ -46,6 +46,17 @@
   .money input.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
   .money span { flex-shrink: 0; font-weight: 600; }
   #startText { width: 100%; padding: 12px 14px; border: 1.5px solid var(--blue); border-radius: 10px; font: inherit; margin: 0 0 4px; }
+  .moreask { background: #f7f8fa; border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 18px 0 4px; text-align: left; }
+  .moreask h3 { font-size: 15px; margin: 0 0 6px; color: var(--navy); }
+  .moreask p { margin: 0 0 12px; font-size: 14px; color: #4a5260; }
+  .moreask .close { width: 100%; margin-top: 8px; }
+  .lock { background: #fbf7ef; border: 1px solid #ecdfc6; color: #6b5530; border-radius: 10px; padding: 11px 13px; font-size: 13.5px; line-height: 1.65; margin: 0 0 18px; }
+  .q .sub2 { font-size: 13px; color: var(--sub); margin: 4px 0 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+  .chips .opt { width: auto; display: inline-block; margin: 0; padding: 10px 13px; }
+  .xin { width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; margin: 0 0 8px; }
+  .money label { flex-shrink: 0; width: 92px; font-size: 14px; color: #4a5260; }
+  .total { font-size: 13.5px; color: var(--navy); font-weight: 600; text-align: right; margin: 0 0 8px; }
   .reopen { background: #eef3f9; border: 1px solid #d5e0ee; color: #34445e; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; margin-bottom: 18px; }
 </style>
 </head>
@@ -154,8 +165,115 @@
     <div id="done" class="msg hidden">
       <h2>감사합니다!</h2>
       <p id="doneText"></p>
+      <div class="moreask hidden" id="moreAsk">
+        <h3 id="moreAskTitle">사전 인터뷰 (선택 · 약 3분)</h3>
+        <p id="moreAskText">지원하시는 기업에 더 설득력 있게 추천드리기 위해 몇 가지만 더 여쭙겠습니다. 통화 대신 편하실 때 눌러서 답해 주시면 됩니다.</p>
+        <button class="submit" id="moreGo" type="button">지금 답하기</button>
+        <button class="close" id="moreLater" type="button">나중에 할게요 (내일 문자로 링크를 한 번 보내 드려요)</button>
+      </div>
       <p class="note">선택을 바꾸고 싶으시면 메일의 버튼을 다시 눌러 주세요.</p>
       <button class="close" id="closeBtn">창 닫기</button>
+    </div>
+
+    <!-- 사전 인터뷰 (지원 의사 회신 뒤 선택) — 추천서 작성용, 🔒 답변은 고객사에 그대로 전달하지 않음 -->
+    <div id="more" class="hidden">
+      <div class="lock">🔒 표시가 있는 질문의 답변은 <b>헤드헌터만 보며 고객사에 그대로 전달되지 않습니다.</b> 추천서와 이력서에는 일반적인 표현으로 정리해 드리니 편하게 답해 주세요.</div>
+
+      <div class="q" data-x="call">
+        <h2><span class="num"></span>진행 중 연락은 어떻게 드리면 좋을까요?
+          <small>업무 시간에 전화를 받기 어려운 분이 많아 미리 여쭙니다.</small></h2>
+        <button class="opt" data-v="ok">업무 시간에도 전화 괜찮아요</button>
+        <button class="opt" data-v="lunch">점심시간에만 통화할 수 있어요</button>
+        <button class="opt" data-v="after">퇴근 후에 통화하고 싶어요</button>
+        <div class="chips hidden" id="xAfterBox">
+          <button class="opt" data-xa="18">오후 6~7시</button><button class="opt" data-xa="19">오후 7~8시</button>
+          <button class="opt" data-xa="20">오후 8~9시</button><button class="opt" data-xa="21">오후 9시 이후</button>
+        </div>
+        <button class="opt" data-v="no_call">통화는 어려워요 (문자·메신저로 부탁드려요)</button>
+      </div>
+
+      <div class="q" data-x="fast">
+        <h2><span class="num"></span>가장 빨리 답하실 수 있는 수단은요?</h2>
+        <div class="chips">
+          <button class="opt" data-v="sms">문자</button><button class="opt" data-v="kakao">카카오톡</button>
+          <button class="opt" data-v="email">이메일</button><button class="opt" data-v="call">전화</button>
+        </div>
+      </div>
+
+      <div class="q" data-x="status">
+        <h2><span class="num"></span>현재 상황을 알려 주세요</h2>
+        <button class="opt" data-v="employed">재직 중이에요</button>
+        <button class="opt" data-v="ending">계약 만료를 앞두고 있어요</button>
+        <button class="opt" data-v="left">퇴사했어요</button>
+        <div class="hidden" id="xLeftBox">
+          <input class="xin" id="xLeftWhen" maxlength="30" placeholder="퇴사 시기 (예: 2026년 8월)">
+          <input class="xin" id="xGap" maxlength="120" placeholder="그 뒤로 어떻게 지내셨는지 (선택 · 예: 휴식, 자격증 준비, 프리랜서)">
+        </div>
+      </div>
+
+      <div class="q" data-x="reason">
+        <h2><span class="num"></span>🔒 이직을 생각하게 된 이유는 무엇인가요?
+          <small>해당하는 것을 모두 골라 주세요.</small></h2>
+        <div class="chips">
+          <button class="opt" data-m="growth">커리어 성장</button><button class="opt" data-m="pay">연봉·처우</button>
+          <button class="opt" data-m="role">업무 범위·직무</button><button class="opt" data-m="people">조직·리더십·팀 관계</button>
+          <button class="opt" data-m="company">회사 상황 (경영·구조조정 등)</button><button class="opt" data-m="contract">계약 만료</button>
+          <button class="opt" data-m="commute">통근·근무지</button><button class="opt" data-m="balance">근무 시간·워라밸</button>
+          <button class="opt" data-m="other">기타</button>
+        </div>
+        <textarea id="xReasonText" maxlength="500" placeholder="선택 · 조금 더 자세히 들려주시면 맞는 자리를 찾고 면접 준비를 돕는 데 큰 도움이 됩니다."></textarea>
+      </div>
+
+      <div class="q" data-x="pay">
+        <h2><span class="num"></span>현재 연봉을 조금 더 자세히 알려 주세요
+          <small>세전 연간 금액(만원)입니다. 처우 협상에서 손해 보지 않도록 상여까지 함께 여쭙니다.</small></h2>
+        <div class="money"><label>기본 연봉</label><input type="text" inputmode="numeric" id="xBase" maxlength="6" placeholder="예: 4500"><span>만원</span></div>
+        <div class="money"><label>성과급·상여</label><input type="text" inputmode="numeric" id="xBonus" maxlength="6" placeholder="없으면 0"><span>만원</span></div>
+        <div class="money"><label>기타 수당</label><input type="text" inputmode="numeric" id="xAllow" maxlength="6" placeholder="선택 · 식대·차량 등"><span>만원</span></div>
+        <div class="total hidden" id="xTotal"></div>
+      </div>
+
+      <div class="q" data-x="raise">
+        <h2><span class="num"></span>희망하시는 인상 폭은 어느 정도인가요?
+          <small>회사마다 연차·학력별 기준이 있어 실제 금액은 면접 뒤 조율됩니다. 대략적으로 골라 주세요.</small></h2>
+        <div class="chips">
+          <button class="opt" data-v="5">5% 내외</button><button class="opt" data-v="10">10% 내외</button>
+          <button class="opt" data-v="15">15% 내외</button><button class="opt" data-v="20">20% 이상</button>
+        </div>
+        <button class="opt" data-v="flat">동결이나 소폭 인상도 괜찮아요</button>
+        <button class="opt" data-v="policy">회사 기준에 맞출게요</button>
+      </div>
+
+      <div class="q" data-x="commute">
+        <h2><span class="num"></span>출퇴근은 주로 어떻게 하실 예정인가요?
+          <small>근무지에 따라 주차가 어려운 곳이 있어 여쭙니다.</small></h2>
+        <button class="opt" data-v="transit">대중교통</button>
+        <button class="opt" data-v="car">자가용 (주차가 필요해요)</button>
+        <button class="opt" data-v="both">둘 다 괜찮아요</button>
+      </div>
+
+      <div class="q" data-x="other">
+        <h2><span class="num"></span>🔒 다른 곳에서 진행 중인 전형이 있나요? <small>선택 · 일정을 맞춰 드리기 위해 여쭙니다.</small></h2>
+        <div class="chips">
+          <button class="opt" data-v="none">없어요</button><button class="opt" data-v="doc">서류 진행 중</button>
+          <button class="opt" data-v="interview">면접 진행 중</button><button class="opt" data-v="offer">합격 통보 받음</button>
+        </div>
+      </div>
+
+      <div class="q" data-x="birth">
+        <h2><span class="num"></span>출생 연도 <small>선택 · 표준 이력서 작성용입니다. 이력서에 이미 있으시면 건너뛰셔도 됩니다.</small></h2>
+        <div class="row"><select id="xBirth"><option value="">고르지 않음</option></select></div>
+      </div>
+
+      <button class="submit" id="moreSubmit" disabled>보내기</button>
+      <p class="err hidden" id="moreErr"></p>
+      <p class="note">헤드헌터 강연호 이사에게만 전달됩니다.</p>
+    </div>
+
+    <div id="moreDone" class="msg hidden">
+      <h2>감사합니다!</h2>
+      <p>보내 주신 내용은 추천서 작성과 연락에 반영하겠습니다. 이 창은 닫으셔도 됩니다.</p>
+      <p class="note">고치고 싶으시면 같은 링크로 다시 들어오시면 됩니다.</p>
     </div>
   </div>
 </div>
@@ -382,9 +500,10 @@ $('submit').addEventListener('click', function() {
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, answers: payload }) })
     .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
     .then(function() {
-      $('doneText').textContent = doneMessage() + ' 이 창은 닫으셔도 됩니다.';
+      $('doneText').textContent = doneMessage() + (answers.intent === 'apply' ? '' : ' 이 창은 닫으셔도 됩니다.');
       show($('form'), false);
       show($('done'), true);
+      showMoreAsk();
     })
     .catch(function(e) {
       if (e && e.message === 'closed') { showClosed({ position: $('title').textContent }); return; }
@@ -399,6 +518,98 @@ $('closeBtn').addEventListener('click', function() {
   window.close();
   setTimeout(function() { $('closeBtn').textContent = '브라우저 탭을 닫아 주세요'; $('closeBtn').disabled = true; }, 300);
 });
+
+// ── 사전 인터뷰 (선택) ──
+//  지원 의사 회신 뒤 감사 화면에서 [지금 답하기] / [나중에 할게요](다음 날 문자 1회) · 문자 링크는 ?t=…&more=1로 바로 이 화면
+var extra = {};          // 서버에 저장된 사전 인터뷰 답
+var xa = { reason: [] }; // 고르는 중인 답
+var X_REQ = ['call', 'fast', 'status', 'reason', 'raise', 'commute'];
+function xq(key) { return document.querySelector('#more .q[data-x="' + key + '"]'); }
+function xMoney(id) { return $(id).value.replace(/\D/g, ''); }
+function xRefresh() {
+  document.querySelectorAll('#more .q[data-x]').forEach(function(box) {
+    var k = box.dataset.x;
+    box.querySelectorAll('.opt[data-v]').forEach(function(b) { b.classList.toggle('on', xa[k] === b.dataset.v); });
+    box.querySelectorAll('.opt[data-m]').forEach(function(b) { b.classList.toggle('on', xa.reason.indexOf(b.dataset.m) >= 0); });
+  });
+  show($('xAfterBox'), xa.call === 'after');
+  document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.classList.toggle('on', xa.after === b.dataset.xa); });
+  show($('xLeftBox'), xa.status === 'left');
+  var base = +xMoney('xBase') || 0, bonus = +xMoney('xBonus') || 0, allow = +xMoney('xAllow') || 0;
+  ['xBase', 'xBonus', 'xAllow'].forEach(function(id) { $(id).classList.toggle('on', !!$(id).value); });
+  show($('xTotal'), !!base);
+  $('xTotal').textContent = '합계 ' + (base + bonus + allow).toLocaleString('ko-KR') + '만원';
+  $('xBirth').classList.toggle('on', !!$('xBirth').value);
+  var n = 0;
+  document.querySelectorAll('#more .q').forEach(function(box) { var num = box.querySelector('.num'); if (num) num.textContent = (++n) + '. '; });
+  var ok = X_REQ.every(function(k) { return k === 'reason' ? xa.reason.length : xa[k]; }) && !(xa.call === 'after' && !xa.after) && !!base;
+  $('moreSubmit').disabled = !ok;
+  $('moreSubmit').textContent = ok ? '보내기' : '필수 항목을 골라 주세요';
+}
+document.querySelectorAll('#more .q[data-x] .opt[data-v]').forEach(function(b) {
+  b.addEventListener('click', function() { xa[b.closest('.q').dataset.x] = b.dataset.v; if (b.dataset.v !== 'after' && b.closest('.q').dataset.x === 'call') delete xa.after; xRefresh(); });
+});
+document.querySelectorAll('#more .opt[data-m]').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var i = xa.reason.indexOf(b.dataset.m);
+    if (i >= 0) xa.reason.splice(i, 1); else xa.reason.push(b.dataset.m);
+    xRefresh();
+  });
+});
+document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.addEventListener('click', function() { xa.after = b.dataset.xa; xRefresh(); }); });
+['xBase', 'xBonus', 'xAllow'].forEach(function(id) { moneyInput($(id), function() {}); $(id).addEventListener('input', xRefresh); });
+$('xBirth').addEventListener('change', xRefresh);
+(function() {
+  var y = new Date().getFullYear();
+  for (var v = y - 18; v >= y - 70; v--) { var o = document.createElement('option'); o.value = v; o.textContent = v + '년'; $('xBirth').appendChild(o); }
+})();
+
+function openMore() {
+  // 저장된 답 채우기
+  xa = { reason: (extra.reason || []).slice() };
+  ['call', 'after', 'fast', 'status', 'raise', 'commute', 'other'].forEach(function(k) { if (extra[k]) xa[k] = extra[k]; });
+  var setMoney = function(id, v) { $(id).value = v ? Number(v).toLocaleString('ko-KR') : ''; };
+  setMoney('xBase', extra.base || answers.salary_now || '');
+  setMoney('xBonus', extra.bonus || ''); setMoney('xAllow', extra.allow || '');
+  $('xLeftWhen').value = extra.left_when || ''; $('xGap').value = extra.gap || '';
+  $('xReasonText').value = extra.reason_text || '';
+  $('xBirth').value = extra.birth || '';
+  $('sub').textContent = '사전 인터뷰 · 필수 6가지 (약 3분)';
+  show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
+  xRefresh();
+  window.scrollTo(0, 0);
+}
+$('moreGo').addEventListener('click', openMore);
+$('moreLater').addEventListener('click', function() {
+  $('moreLater').disabled = true;
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, later: true }) })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); })
+    .then(function() { $('moreAskText').textContent = '내일 문자로 링크를 보내 드릴게요. 편하실 때 답해 주시면 됩니다.'; show($('moreGo'), false); show($('moreLater'), false); })
+    .catch(function() { $('moreLater').disabled = false; });
+});
+$('moreSubmit').addEventListener('click', function() {
+  var p = { call: xa.call, fast: xa.fast, status: xa.status, reason: xa.reason, raise: xa.raise, commute: xa.commute,
+    base: xMoney('xBase'), bonus: xMoney('xBonus'), allow: xMoney('xAllow'), reason_text: $('xReasonText').value, birth: $('xBirth').value };
+  if (xa.call === 'after') p.after = xa.after;
+  if (xa.status === 'left') { p.left_when = $('xLeftWhen').value; p.gap = $('xGap').value; }
+  if (xa.other) p.other = xa.other;
+  $('moreSubmit').disabled = true; $('moreSubmit').textContent = '보내는 중…';
+  show($('moreErr'), false);
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, extra: p }) })
+    .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
+    .then(function() { extra = p; show($('more'), false); show($('moreDone'), true); $('sub').textContent = ''; window.scrollTo(0, 0); })
+    .catch(function(e) {
+      if (e && e.message === 'closed') { show($('more'), false); showClosed({ position: $('title').textContent }); return; }
+      $('moreErr').textContent = '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.'; show($('moreErr'), true); xRefresh();
+    });
+});
+// 감사 화면의 사전 인터뷰 안내 (지원하기로 한 분만)
+function showMoreAsk() {
+  var on = answers.intent === 'apply';
+  show($('moreAsk'), on);
+  if (!on) return;
+  if (extra.at) { $('moreAskTitle').textContent = '사전 인터뷰 답변을 보내 주셨습니다'; $('moreAskText').textContent = '고칠 내용이 있으시면 아래 버튼으로 수정하실 수 있습니다.'; $('moreGo').textContent = '답변 고치기'; show($('moreLater'), false); }
+}
 
 // 오더가 마감된 링크: 지원서 대신 정중한 마감 안내
 function showClosed(d) {
@@ -431,8 +642,10 @@ else fetch(API + '?t=' + encodeURIComponent(token))
     extraDocs = d.extraDocs || '';
     uploaded = d.files || [];
     buildWhenOptions();
+    extra = (d.answers && d.answers.extra) || {};
     if (d.answers) {
       answers = Object.assign({}, d.answers);
+      delete answers.extra;
       $('memo').value = d.answers.memo || '';
       delete answers.memo;
       $('startText').value = d.answers.start_text || '';
@@ -444,6 +657,8 @@ else fetch(API + '?t=' + encodeURIComponent(token))
       if (w) { $('whenDate').value = w[1]; $('whenTime').value = w[2]; }
       if (w && $('whenDate').value !== w[1]) delete answers.when;   // 지난 날짜면 다시 고르게
     }
+    // 문자로 받은 사전 인터뷰 링크(&more=1): 지원 의사를 이미 보냈으면 바로 사전 인터뷰
+    if (new URLSearchParams(location.search).get('more') && d.answers && d.answers.intent === 'apply') { openMore(); return; }
     show($('loading'), false);
     show($('form'), true);
     refresh();
