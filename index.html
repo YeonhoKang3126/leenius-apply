@@ -225,11 +225,13 @@
       </div>
 
       <div class="q" data-x="pay">
-        <h2><span class="num"></span>현재 연봉을 조금 더 자세히 알려 주세요
-          <small>세전 연간 금액(만원)입니다. 처우 협상에서 손해 보지 않도록 상여까지 함께 여쭙니다.</small></h2>
-        <div class="money"><label>기본 연봉</label><input type="text" inputmode="numeric" id="xBase" maxlength="6" placeholder="예: 4500"><span>만원</span></div>
-        <div class="money"><label>성과급·상여</label><input type="text" inputmode="numeric" id="xBonus" maxlength="6" placeholder="없으면 0"><span>만원</span></div>
-        <div class="money"><label>기타 수당</label><input type="text" inputmode="numeric" id="xAllow" maxlength="6" placeholder="선택 · 식대·차량 등"><span>만원</span></div>
+        <h2><span class="num"></span>현재 받고 계신 연봉을 자세히 알려 주세요
+          <small>유리한 연봉 협상을 위해 여쭙니다. 기본 연봉 외에 받고 계신 상여·수당까지 빠짐없이 적어 주시면 처우 협상 때 근거로 씁니다. (세전 연간 금액, 만원)</small></h2>
+        <div class="money"><label>기본 연봉</label><input type="text" inputmode="numeric" id="xBase" maxlength="6" placeholder="상여 제외 · 예: 4500"><span>만원</span></div>
+        <p class="sub2">기본 연봉 외에 받고 계신 것이 있으면 적어 주세요. 없으면 비워 두셔도 됩니다.</p>
+        <div class="money"><label>고정 상여</label><input type="text" inputmode="numeric" id="xFixed" maxlength="6" placeholder="정기·명절 상여 등"><span>만원</span></div>
+        <div class="money"><label>성과급</label><input type="text" inputmode="numeric" id="xBonus" maxlength="6" placeholder="작년 기준 · 변동분"><span>만원</span></div>
+        <div class="money"><label>기타 수당</label><input type="text" inputmode="numeric" id="xAllow" maxlength="6" placeholder="식대·차량·자격 수당 등"><span>만원</span></div>
         <div class="total hidden" id="xTotal"></div>
       </div>
 
@@ -261,8 +263,8 @@
       </div>
 
       <div class="q" data-x="birth">
-        <h2><span class="num"></span>출생 연도 <small>선택 · 표준 이력서 작성용입니다. 이력서에 이미 있으시면 건너뛰셔도 됩니다.</small></h2>
-        <div class="row"><select id="xBirth"><option value="">고르지 않음</option></select></div>
+        <h2><span class="num"></span>생년월일 <small>이력서에 생일이 빠져 있는 경우가 많아, 기업 제출용 표준 이력서 작성을 위해 여쭙니다.</small></h2>
+        <input type="date" class="xin" id="xBirth" min="1950-01-01">
       </div>
 
       <button class="submit" id="moreSubmit" disabled>보내기</button>
@@ -535,14 +537,14 @@ function xRefresh() {
   show($('xAfterBox'), xa.call === 'after');
   document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.classList.toggle('on', xa.after === b.dataset.xa); });
   show($('xLeftBox'), xa.status === 'left');
-  var base = +xMoney('xBase') || 0, bonus = +xMoney('xBonus') || 0, allow = +xMoney('xAllow') || 0;
-  ['xBase', 'xBonus', 'xAllow'].forEach(function(id) { $(id).classList.toggle('on', !!$(id).value); });
+  var base = +xMoney('xBase') || 0, fixed = +xMoney('xFixed') || 0, bonus = +xMoney('xBonus') || 0, allow = +xMoney('xAllow') || 0;
+  ['xBase', 'xFixed', 'xBonus', 'xAllow'].forEach(function(id) { $(id).classList.toggle('on', !!$(id).value); });
   show($('xTotal'), !!base);
-  $('xTotal').textContent = '합계 ' + (base + bonus + allow).toLocaleString('ko-KR') + '만원';
+  $('xTotal').textContent = '합계 ' + (base + fixed + bonus + allow).toLocaleString('ko-KR') + '만원';
   $('xBirth').classList.toggle('on', !!$('xBirth').value);
   var n = 0;
   document.querySelectorAll('#more .q').forEach(function(box) { var num = box.querySelector('.num'); if (num) num.textContent = (++n) + '. '; });
-  var ok = X_REQ.every(function(k) { return k === 'reason' ? xa.reason.length : xa[k]; }) && !(xa.call === 'after' && !xa.after) && !!base;
+  var ok = X_REQ.every(function(k) { return k === 'reason' ? xa.reason.length : xa[k]; }) && !(xa.call === 'after' && !xa.after) && !!base && /^\d{4}-\d{2}-\d{2}$/.test($('xBirth').value);
   $('moreSubmit').disabled = !ok;
   $('moreSubmit').textContent = ok ? '보내기' : '필수 항목을 골라 주세요';
 }
@@ -557,12 +559,9 @@ document.querySelectorAll('#more .opt[data-m]').forEach(function(b) {
   });
 });
 document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.addEventListener('click', function() { xa.after = b.dataset.xa; xRefresh(); }); });
-['xBase', 'xBonus', 'xAllow'].forEach(function(id) { moneyInput($(id), function() {}); $(id).addEventListener('input', xRefresh); });
+['xBase', 'xFixed', 'xBonus', 'xAllow'].forEach(function(id) { moneyInput($(id), function() {}); $(id).addEventListener('input', xRefresh); });
 $('xBirth').addEventListener('change', xRefresh);
-(function() {
-  var y = new Date().getFullYear();
-  for (var v = y - 18; v >= y - 70; v--) { var o = document.createElement('option'); o.value = v; o.textContent = v + '년'; $('xBirth').appendChild(o); }
-})();
+$('xBirth').max = (new Date().getFullYear() - 16) + '-12-31';
 
 function openMore() {
   // 저장된 답 채우기
@@ -570,11 +569,11 @@ function openMore() {
   ['call', 'after', 'fast', 'status', 'raise', 'commute', 'other'].forEach(function(k) { if (extra[k]) xa[k] = extra[k]; });
   var setMoney = function(id, v) { $(id).value = v ? Number(v).toLocaleString('ko-KR') : ''; };
   setMoney('xBase', extra.base || answers.salary_now || '');
-  setMoney('xBonus', extra.bonus || ''); setMoney('xAllow', extra.allow || '');
+  setMoney('xFixed', extra.fixed || ''); setMoney('xBonus', extra.bonus || ''); setMoney('xAllow', extra.allow || '');
   $('xLeftWhen').value = extra.left_when || ''; $('xGap').value = extra.gap || '';
   $('xReasonText').value = extra.reason_text || '';
   $('xBirth').value = extra.birth || '';
-  $('sub').textContent = '사전 인터뷰 · 필수 6가지 (약 3분)';
+  $('sub').textContent = '사전 인터뷰 · 약 3분';
   show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
   xRefresh();
   window.scrollTo(0, 0);
@@ -589,7 +588,7 @@ $('moreLater').addEventListener('click', function() {
 });
 $('moreSubmit').addEventListener('click', function() {
   var p = { call: xa.call, fast: xa.fast, status: xa.status, reason: xa.reason, raise: xa.raise, commute: xa.commute,
-    base: xMoney('xBase'), bonus: xMoney('xBonus'), allow: xMoney('xAllow'), reason_text: $('xReasonText').value, birth: $('xBirth').value };
+    base: xMoney('xBase'), fixed: xMoney('xFixed'), bonus: xMoney('xBonus'), allow: xMoney('xAllow'), reason_text: $('xReasonText').value, birth: $('xBirth').value };
   if (xa.call === 'after') p.after = xa.after;
   if (xa.status === 'left') { p.left_when = $('xLeftWhen').value; p.gap = $('xGap').value; }
   if (xa.other) p.other = xa.other;
