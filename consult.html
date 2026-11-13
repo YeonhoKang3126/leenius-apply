@@ -56,7 +56,7 @@
   .me a { font-size: 15px; font-weight: 600; }
 
   /* 상담 설문 카드 */
-  .card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px rgba(30,40,55,.08); padding: 28px 28px 24px; }
+  .card { scroll-margin-top: 12px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px rgba(30,40,55,.08); padding: 28px 28px 24px; }
   .card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .card-top h2 { font-size: 20px; line-height: 1.4; color: var(--navy); font-weight: 700; }
   .card-top span { font-size: 13px; color: var(--sub); white-space: nowrap; }
@@ -305,7 +305,12 @@
     next.textContent = st.final ? '상담 신청하기' : st.start ? '다음 (질문으로)' : '다음';
     next.style.display = stays(st) || ans[st.id] ? '' : 'none';
     TEXT.forEach(function(k) { var e = document.getElementById(k); if (e && ans[k]) e.value = ans[k]; });
-    if (focus) document.getElementById('q').focus({ preventScroll: true });
+    if (focus) {
+      document.getElementById('q').focus({ preventScroll: true });
+      // 화면이 바뀌며 카드 높이가 줄면 아래 구역이 보이게 됨 → 카드 위쪽이 화면 밖이면 카드 처음으로 올림 (휴대폰)
+      var card = document.getElementById('ask');
+      if (card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
   }
 
   stage.addEventListener('change', function(e) {
