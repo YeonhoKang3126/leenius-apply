@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:type" content="website">
+<meta property="og:title" content="채용 상담 신청 | 리니어스 강연호 이사">
+<meta property="og:description" content="채용 공고가 닿지 않는 곳에, 찾던 사람이 있습니다. 의뢰 전에 먼저 상담해 보세요.">
+<meta property="og:url" content="https://yeonhokang3126.github.io/leenius-apply/consult.html">
+<title>채용 상담 신청 | 리니어스 강연호 이사</title>
+<meta name="description" content="찾기 어려운 포지션의 채용, 리니어스 강연호 이사와 먼저 상담해 보세요.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root {
+    --navy: #34445e; --blue: #3d567c; --blue-dark: #2d4262; --copper: #8a5a44;
+    --ink: #2b2f36; --sub: #5f6773; --line: #e2e6ec; --bg: #f5f6f8; --white: #fff;
+    --error: #b3261e; --ok: #2e6b4f; --ph: #fff4d6; --ph-line: #e0b84c; --pick: #f1f4f8;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.75 Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: var(--blue); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  [tabindex="-1"]:focus { outline: none; }
+
+  .draft { background: var(--ph); border-bottom: 1px solid var(--ph-line); padding: 8px 20px; font-size: 13px; line-height: 1.5; text-align: center; color: #6b5310; }
+  .ph { background: var(--ph); box-shadow: 0 0 0 1px var(--ph-line); border-radius: 3px; padding: 0 4px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  header { background: var(--white); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 12px; }
+  header img { display: block; width: 104px; height: 20px; }
+  .head-cta { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1.5px solid var(--blue); border-radius: 10px; color: var(--blue); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .head-cta:hover { background: var(--bg); color: var(--blue-dark); }
+
+  /* 첫 화면: 왼쪽 소개 · 오른쪽 상담 설문 */
+  .hero { padding: 72px 0 88px; }
+  .hero .wrap { display: grid; grid-template-columns: 1fr 480px; gap: 64px; align-items: start; }
+  .label { font-size: 13px; font-weight: 700; letter-spacing: .06em; color: var(--copper); margin-bottom: 16px; }
+  h1 { font-size: 44px; line-height: 1.3; font-weight: 700; color: var(--navy); letter-spacing: -.025em; }
+  .lead { margin-top: 20px; max-width: 30em; color: var(--sub); font-size: 18px; line-height: 1.75; }
+
+  .fields { margin-top: 32px; max-width: 30em; }
+  .fields h2 { font-size: 13px; font-weight: 700; color: var(--sub); margin-bottom: 10px; }
+  .main-field { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 14px 16px; background: var(--navy); color: #fff; border-radius: 10px; }
+  .main-field b { font-size: 18px; }
+  .main-field span { font-size: 15px; color: #d5dce6; }
+  .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-size: 15px; color: var(--navy); background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 3px 12px; }
+
+  .me { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 16px; max-width: 30em; }
+  .me .photo { flex: 0 0 72px; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: 50% 20%; background: var(--line); border: 1px solid var(--line); }
+  .me b { display: block; color: var(--navy); font-size: 17px; line-height: 1.4; }
+  .me small { display: block; color: var(--sub); font-size: 15px; line-height: 1.5; }
+  .me a { font-size: 15px; font-weight: 600; }
+
+  /* 상담 설문 카드 */
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px rgba(30,40,55,.08); padding: 28px 28px 24px; }
+  .card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .card-top h2 { font-size: 20px; line-height: 1.4; color: var(--navy); font-weight: 700; }
+  .card-top span { font-size: 13px; color: var(--sub); white-space: nowrap; }
+  .prog { margin-top: 14px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog div { height: 100%; width: 0; background: var(--blue); transition: width .25s; }
+  .stepno { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--copper); }
+
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend { padding: 0; margin-top: 6px; font-size: 20px; line-height: 1.45; font-weight: 700; color: var(--navy); }
+  .hint { margin-top: 4px; font-size: 15px; color: var(--sub); }
+  .opts { margin-top: 16px; display: grid; gap: 8px; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .opt { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 8px 14px; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; line-height: 1.45; font-size: 16px; }
+  .opt:hover { border-color: var(--blue); }
+  .opt input { width: 20px; height: 20px; margin: 0; flex-shrink: 0; accent-color: var(--blue); }
+  .opt:has(input:checked) { border-color: var(--blue); background: var(--pick); font-weight: 600; }
+  .opt:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .sub-q { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+
+  .f { margin-top: 14px; }
+  .sub-q .f { margin-top: 0; }
+  .f label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .f i { font-style: normal; font-weight: 400; font-size: 13px; color: var(--sub); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  input[type=text], input[type=tel], input[type=email], input[type=date], textarea { width: 100%; min-height: 48px; padding: 10px 14px; border: 1.5px solid #cfd5de; border-radius: 10px; background: #fff; color: var(--ink); font-family: inherit; font-size: 16px; line-height: 1.5; }
+  input:focus, textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(61,86,124,.15); }
+  input[aria-invalid="true"] { border-color: var(--error); }
+  textarea { min-height: 96px; resize: vertical; }
+  .err { display: none; margin-top: 4px; font-size: 13px; color: var(--error); }
+  input[aria-invalid="true"] + .err { display: block; }
+
+  .agree { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 15px; line-height: 1.6; }
+  .agree input { flex: 0 0 20px; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--blue); }
+  details.terms { margin: 6px 0 0 30px; font-size: 13px; color: var(--sub); line-height: 1.7; }
+  details.terms summary { cursor: pointer; color: var(--blue); font-weight: 600; }
+  details.terms dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+  details.terms dt { font-weight: 600; color: var(--ink); }
+  details.terms dd { margin: 0; }
+
+  #result { min-height: 22px; margin-top: 10px; font-size: 13px; color: var(--error); }
+  .nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border: 1.5px solid var(--blue); border-radius: 10px; background: var(--blue); color: #fff; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  .btn.quiet { background: #fff; color: var(--blue); }
+  .btn.quiet:hover { background: var(--bg); }
+  .btn.grow { flex: 1; }
+  .note { margin-top: 12px; font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+  .done h3 { font-size: 22px; line-height: 1.4; color: var(--ok); }
+  .done p { margin-top: 8px; color: var(--sub); font-size: 16px; }
+  .done dl { margin: 16px 0 0; padding: 14px 16px; background: var(--bg); border-radius: 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 15px; }
+  .done dt { color: var(--sub); }
+  .done dd { margin: 0; color: var(--ink); }
+
+  /* 진행 방식 */
+  .how { background: var(--white); border-top: 1px solid var(--line); padding: 72px 0; }
+  .how .wrap { display: grid; grid-template-columns: 300px 1fr; gap: 64px; }
+  .how h2 { font-size: 26px; line-height: 1.4; color: var(--navy); font-weight: 700; }
+  .how ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .how li { display: grid; grid-template-columns: 56px 1fr; padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .how li > span { color: var(--copper); font-weight: 700; font-size: 15px; }
+  .how li b { display: block; color: var(--navy); font-weight: 600; }
+  .how li p { color: var(--sub); font-size: 15px; margin-top: 2px; }
+
+  footer { padding: 32px 0 40px; font-size: 13px; color: var(--sub); line-height: 1.8; }
+  footer b { color: var(--ink); }
+
+  @media (max-width: 960px) {
+    .hero { padding: 40px 0 56px; }
+    .hero .wrap { grid-template-columns: 1fr; gap: 36px; }
+    h1 { font-size: 34px; }
+    .lead { font-size: 17px; }
+    .how { padding: 56px 0; }
+    .how .wrap { grid-template-columns: 1fr; gap: 24px; }
+  }
+  @media (max-width: 520px) {
+    header .wrap { height: 60px; }
+    h1 { font-size: 29px; }
+    .card { padding: 22px 18px 18px; border-radius: 12px; }
+    .row, .opts.two { grid-template-columns: 1fr; }
+    legend { font-size: 19px; }
+    .head-cta { font-size: 14px; padding: 0 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .prog div { transition: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="https://yeonhokang3126.github.io/leenius-apply/leenius-logo.png" width="104" height="20" alt="LEENIUS 리니어스">
+    <a class="head-cta" href="#ask">상담 신청</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="label">채용 상담 신청</p>
+        <h1>채용 공고가 닿지 않는 곳에,<br>찾던 사람이 있습니다.</h1>
+        <p class="lead">의뢰를 결정하기 전에 먼저 상담해 보세요. 몇 가지 질문에 답해 주시면 상황을 미리 파악해, 첫 통화부터 구체적인 이야기를 나눌 수 있습니다.</p>
+
+        <div class="fields">
+          <h2>진행해 온 분야</h2>
+          <div class="main-field"><b>연구개발</b><span>하드웨어·소프트웨어 개발 · 로봇 · 통신</span></div>
+          <div class="tags">
+            <span class="tag">생산기술·자동화</span>
+            <span class="tag">품질</span>
+            <span class="tag">해외영업</span>
+            <span class="tag">MD·커머스</span>
+            <span class="tag">플랫폼·PMO</span>
+            <span class="tag">마케팅·PR</span>
+            <span class="tag">고객서비스 관리</span>
+            <span class="tag">HR 컨설팅</span>
+          </div>
+        </div>
+
+        <div class="me">
+          <img class="photo" src="kang-profile.png" width="72" height="72" alt="강연호 이사">
+          <div>
+            <b>강연호 이사 · 헤드헌팅 사업부</b>
+            <small>이학박사 · 리니어스 주식회사</small>
+            <a href="https://www.linkedin.com/in/%EC%97%B0%ED%98%B8-%EA%B0%95-314917272/" target="_blank" rel="noopener">LinkedIn에서 보기 ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="ask">
+        <div class="card-top"><h2>상담 신청</h2><span>연락처 입력 후 몇 가지 질문 · 약 2분</span></div>
+        <form id="lead" novalidate>
+          <div class="prog" aria-hidden="true"><div id="bar"></div></div>
+          <p class="stepno" id="stepno" aria-live="polite"></p>
+          <div id="stage"></div>
+          <p id="result" role="status"></p>
+          <div class="nav">
+            <button class="btn quiet" type="button" id="back">이전</button>
+            <button class="btn grow" type="button" id="next">다음</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" aria-labelledby="how-t">
+    <div class="wrap">
+      <h2 id="how-t">신청 후에는<br>이렇게 진행됩니다</h2>
+      <ol>
+        <li><span>01</span><div><b>상담 일정을 잡습니다</b><p>남겨 주신 답을 미리 읽고, 편하신 방법과 시간에 맞춰 연락드립니다.</p></div></li>
+        <li><span>02</span><div><b>상황을 듣고 방향을 정합니다</b><p>꼭 필요한 경험과 양보할 수 있는 조건을 함께 정리하고, 현실적인 인재 시장을 말씀드립니다.</p></div></li>
+        <li><span>03</span><div><b>의뢰 여부는 그다음에 정하셔도 됩니다</b><p>진행 조건을 확인하신 뒤 의뢰하시면, 직접 찾고 이야기를 나눈 후보자를 추천서와 함께 전달합니다.</p></div></li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>리니어스 주식회사</b> · 대표이사 이청재 · 담당 강연호 이사<br>
+    서울특별시 송파구 송파대로 260, 505호 (우. 05719) · T. 02-6925-2967 · E. <a href="mailto:yh.kang@leenius.com">yh.kang@leenius.com</a><br>
+    사업자등록번호 561-86-03340 · 유료직업소개사업 제2025-3230291-14-5-00009호 · <a href="https://leenius.com/" target="_blank" rel="noopener">leenius.com</a>
+  </div>
+</footer>
+
+<script>
+  // 상담 전 설문: 쉬운 선택부터, 연락처는 마지막에. 단일 선택은 고르면 바로 다음으로.
+  // extra: 같은 화면 아래에 붙는 선택 입력 (날짜·포지션명) · sub: 같은 화면의 작은 추가 질문
+  // 접수: 서버 sf-lead (연락처 먼저 저장 → 설문 저장 + 텔레그램 알림 → PC가 하이웍스로 회사소개서 안내 메일)
+  var API = 'https://qxcrtwtjhllsbgahfqvd.supabase.co/functions/v1/sf-lead';
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4Y3J0d3RqaGxsc2JnYWhmcXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMxMDUsImV4cCI6MjA2NzAzOTEwNX0.0hd5bIoy1YXWdXM99MoeikrJkSYyAnsKnxLCBgG_5Ms';   // 공개용 키 (누구나 봐도 되는 키, 함수 호출 확인용)
+  var lead = null, leadSig = '';
+  var STEPS = [
+    { id: 'start', q: '상담받으실 분의 연락처를 알려 주세요', hint: '다음 화면부터 상담에 필요한 몇 가지를 여쭙니다.', start: true },
+    { id: 'need', q: '어떤 도움이 필요하신가요?',
+      opts: ['의뢰 전에 먼저 상담을 받고 싶어요', '바로 채용을 의뢰하고 싶어요', '연봉 수준·인재 시장이 궁금해요', '기타'] },
+    { id: 'field', q: '어떤 분야를 채용하시나요?', hint: '여러 포지션이면 모두 골라 주세요', multi: true, two: true,
+      opts: ['연구개발', '생산기술·자동화', '품질', '해외영업', 'MD·커머스', '플랫폼·서비스 기획', '마케팅·PR·디자인', '고객서비스', '인사·경영지원', '법무', '기타'],
+      extra: [{ id: 'role', label: '포지션 이름', ph: '예: 로봇 SW 개발자, 해외영업 팀원' }] },
+    { id: 'level', q: '어느 직급을 찾으시나요?', hint: '여러 명이면 모두 골라 주세요', multi: true,
+      opts: ['사원·대리급', '과장·차장급', '팀장·리더급', '임원급', '아직 정하지 않았어요'] },
+    { id: 'count', q: '몇 명을 채용하실 예정인가요?', opts: ['1명', '2~3명', '4명 이상', '아직 미정이에요'] },
+    { id: 'when', q: '언제까지 입사하면 좋을까요?',
+      opts: ['최대한 빨리 (1개월 안)', '1~3개월 안', '3개월 이후', '아직 정해지지 않았어요'],
+      extra: [{ id: 'date', label: '희망 입사일', type: 'date' }] },
+    { id: 'why', q: '이번 채용은 어떤 상황인가요?',
+      opts: ['퇴사자 자리를 채워야 해요', '조직·사업이 커져서 새로 뽑아요', '새 사업·새 조직을 꾸려요', '외부에 알리지 않고 뽑아야 해요', '기타'] },
+    { id: 'now', q: '지금까지 어떻게 진행하셨나요?', hint: '해당하는 것을 모두 골라 주세요', multi: true,
+      opts: ['아직 시작 전이에요', '채용 공고를 올려 두었어요', '면접은 봤지만 맞는 사람이 없었어요', '다른 서치펌과도 진행 중이에요', '헤드헌팅은 처음이에요'] },
+    { id: 'pay', q: '연봉은 대략 어느 정도로 생각하시나요?', hint: '대략이면 충분합니다',
+      opts: ['4천만 원 미만', '4천~6천만 원', '6천~8천만 원', '8천만~1억 원', '1억 원 이상', '경력에 따라 협의'] },
+    { id: 'size', q: '회사 규모는 어느 정도인가요?', opts: ['30명 미만', '30~100명', '100~300명', '300명 이상'] },
+    { id: 'how', q: '상담은 어떻게 하는 게 편하신가요?', hint: '편한 것을 모두 골라 주세요', multi: true, two: true,
+      opts: ['전화', '화상 회의', '방문 미팅', '메일'],
+      sub: { id: 'time', q: '연락드리기 좋은 시간', opts: ['오전', '오후', '언제든 괜찮아요'] } },
+    { id: 'final', q: '마지막으로, 더 알려 주실 내용이 있으신가요?', hint: '없으시면 바로 신청하셔도 됩니다.', final: true }
+  ];
+  var ans = {}, cur = 0;
+  var stage = document.getElementById('stage'), back = document.getElementById('back'), next = document.getElementById('next');
+  function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+  function say(t) { document.getElementById('result').textContent = t; }
+  function optsHtml(name, opts, multi, sel, two) {
+    return '<div class="opts' + (two ? ' two' : '') + '">' + opts.map(function(o, i) {
+      var on = multi ? (sel || []).indexOf(o) >= 0 : sel === o;
+      return '<label class="opt"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + i + '"' + (on ? ' checked' : '') + '><span>' + esc(o) + '</span></label>';
+    }).join('') + '</div>';
+  }
+  function field(id, label, type, auto, optional, ph) {
+    var input = type === 'area' ? '<textarea id="' + id + '"' + (ph ? ' placeholder="' + ph + '"' : '') + '></textarea>'
+      : '<input id="' + id + '" type="' + type + '" autocomplete="' + (auto || 'off') + '"' + (ph ? ' placeholder="' + ph + '"' : '') + (type === 'tel' ? ' inputmode="tel"' : '') + '>';
+    return '<div class="f"><label for="' + id + '">' + label + (optional ? ' <i>(선택)</i>' : '') + '</label>' + input +
+      (optional ? '' : '<div class="err">' + label + '을(를) 확인해 주세요.</div>') + '</div>';
+  }
+  var TEXT = ['role', 'date', 'company', 'name', 'title', 'phone', 'email', 'memo'];
+  var agreed = false;
+  function keepText() { TEXT.forEach(function(k) { var e = document.getElementById(k); if (e) ans[k] = e.value; }); }
+  // 선택 입력이나 추가 질문이 있는 화면은 고르기만으로 넘어가지 않음 (입력할 틈을 줌)
+  function stays(st) { return st.multi || st.start || st.final || st.extra || st.sub; }
+
+  function draw(focus) {
+    var st = STEPS[cur];
+    document.getElementById('bar').style.width = Math.round((cur + 1) / STEPS.length * 100) + '%';
+    document.getElementById('stepno').textContent = (cur + 1) + ' / ' + STEPS.length;
+    var html = '<fieldset><legend tabindex="-1" id="q">' + esc(st.q) + '</legend>' + (st.hint ? '<p class="hint">' + st.hint + '</p>' : '');
+    if (st.start) {
+      html += '<div class="row">' + field('company', '회사명', 'text', 'organization') + field('name', '담당자 성함', 'text', 'name') + '</div>' +
+        '<div class="row">' + field('phone', '휴대폰 번호', 'tel', 'tel', false, '010-0000-0000') + field('email', '이메일', 'email', 'email', false, 'name@company.com') + '</div>' +
+        field('title', '부서·직책', 'text', 'organization-title', true, '예: 인사팀 팀장') +
+        '<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"><label for="website">website</label><input id="website" type="text" tabindex="-1" autocomplete="off"></div>' +
+        '<label class="agree"><input id="agree" type="checkbox"' + (agreed ? ' checked' : '') + '> <span>상담 연락을 위한 개인정보 수집·이용에 동의합니다.</span></label>' +
+        '<details class="terms"><summary>내용 보기</summary><dl>' +
+        '<dt>항목</dt><dd>회사명, 성함, 부서·직책(선택), 휴대폰 번호, 이메일</dd>' +
+        '<dt>목적</dt><dd>채용 상담 연락과 의뢰 안내</dd>' +
+        '<dt>보관</dt><dd>상담 종료 후 1년이 지나면 파기</dd></dl>' +
+        '<p style="margin-top:6px;">동의하지 않으시면 접수가 어렵습니다. 대신 02-6925-2967 또는 메일로 바로 연락 주셔도 됩니다.</p></details>';
+    } else if (st.final) {
+      html += field('memo', '더 알려 주실 내용', 'area', 'off', true, '찾기 어려운 조건, 꼭 필요한 경험, 상담 전에 궁금한 점 등');
+    } else {
+      html += optsHtml(st.id, st.opts, st.multi, ans[st.id], st.two);
+      (st.extra || []).forEach(function(x) {
+        html += '<div class="sub-q">' + field(x.id, x.label, x.type || 'text', 'off', true, x.ph) + '</div>';
+      });
+      if (st.sub) html += '<div class="sub-q"><p class="hint" style="font-weight:600;color:var(--ink);">' + st.sub.q + ' <span style="font-weight:400;color:var(--sub);font-size:13px;">(선택)</span></p>' + optsHtml(st.sub.id, st.sub.opts, false, ans[st.sub.id]) + '</div>';
+    }
+    stage.innerHTML = html + '</fieldset>';
+    say('');
+    back.style.display = cur ? '' : 'none';   // 첫 화면은 [다음]이 가로 전체
+    next.textContent = st.final ? '상담 신청하기' : st.start ? '다음 (질문으로)' : '다음';
+    next.style.display = stays(st) || ans[st.id] ? '' : 'none';
+    TEXT.forEach(function(k) { var e = document.getElementById(k); if (e && ans[k]) e.value = ans[k]; });
+    if (focus) document.getElementById('q').focus({ preventScroll: true });
+  }
+
+  stage.addEventListener('change', function(e) {
+    var st = STEPS[cur], name = e.target.name;
+    if (!name || st.start || st.final) return;
+    if (st.sub && name === st.sub.id) { ans[name] = st.sub.opts[e.target.value]; return; }
+    if (st.multi) {
+      ans[st.id] = Array.prototype.map.call(stage.querySelectorAll('input[name="' + st.id + '"]:checked'), function(x) { return st.opts[x.value]; });
+    } else {
+      ans[st.id] = st.opts[e.target.value];
+      next.style.display = '';
+      if (!stays(st) && !stage.dataset.key) { var at = cur; setTimeout(function() { if (cur === at) { cur++; draw(true); } }, 220); }   // 마우스·터치는 고르면 바로 다음으로
+    }
+    say('');
+  });
+  // 키보드 화살표로 라디오를 옮길 때는 자동으로 넘어가지 않음
+  stage.addEventListener('keydown', function() { stage.dataset.key = '1'; });
+  stage.addEventListener('pointerdown', function() { delete stage.dataset.key; });
+  back.addEventListener('click', function() { keepText(); if (STEPS[cur].start) agreed = document.getElementById('agree').checked; cur--; draw(true); });
+
+  // 첫 화면 연락처 확인 → 통과해야 설문이 보임
+  function checkContact() {
+    var first = null;
+    var ok = {
+      company: function(v) { return v.trim(); }, name: function(v) { return v.trim(); },
+      phone: function(v) { return /^0\d{8,10}$/.test(v.replace(/[\s-]/g, '')); },
+      email: function(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+    };
+    Object.keys(ok).forEach(function(k) {
+      var el = document.getElementById(k), bad = !ok[k](el.value);
+      if (bad) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+      if (bad && !first) first = el;
+    });
+    if (first) { first.focus(); say('빨간 칸을 확인해 주세요.'); return false; }
+    if (!document.getElementById('agree').checked) { document.getElementById('agree').focus(); say('개인정보 수집·이용에 동의해 주세요.'); return false; }
+    agreed = true; keepText();
+    return true;
+  }
+  function post(body) {
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON }, body: JSON.stringify(body) })
+      .then(function(r) { return r.json().catch(function() { return {}; }).then(function(d) { if (!r.ok || !d.ok) throw new Error(d.error || ('' + r.status)); return d; }); });
+  }
+  var FAIL = '접수하지 못했습니다. 잠시 후 다시 눌러 주시거나 02-6925-2967, yh.kang@leenius.com으로 연락 주세요.';
+  function busy(on, text) { next.disabled = on; back.disabled = on; if (on) next.textContent = text; }
+  // 연락처를 먼저 저장 (설문을 끝내지 않고 나가도 연락처는 남음) — 같은 연락처면 다시 저장하지 않음
+  function saveContact() {
+    var c = { company: ans.company.trim(), name: ans.name.trim(), title: (ans.title || '').trim(), phone: ans.phone.trim(), email: ans.email.trim() };
+    var sig = JSON.stringify(c);
+    if (lead && sig === leadSig) { cur++; draw(true); return; }
+    busy(true, '확인 중…');
+    post(Object.assign({ step: 'contact', agree: true, website: document.getElementById('website').value }, c)).then(function(d) {
+      lead = { id: d.id, key: d.key }; leadSig = sig;
+      busy(false); cur++; draw(true);
+    }, function(e) {
+      busy(false); next.textContent = '다음 (질문으로)';
+      say(e.message === 'too_many' ? '신청이 많아 잠시 접수가 막혔습니다. 02-6925-2967로 연락 주세요.' : FAIL);
+    });
+  }
+  function send() {
+    keepText();
+    busy(true, '보내는 중…');
+    var a = {};
+    ['need', 'field', 'level', 'count', 'when', 'why', 'now', 'pay', 'size', 'how', 'time', 'role', 'date'].forEach(function(k) { if (ans[k]) a[k] = ans[k]; });
+    post({ step: 'final', id: lead.id, key: lead.key, answers: a, memo: ans.memo || '' }).then(done, function() { busy(false); next.textContent = '상담 신청하기'; say(FAIL); });
+  }
+  function done() {
+    var list = function(v) { return Array.isArray(v) ? v.join(', ') : (v || '—'); };
+    var when = list(ans.when) + (ans.date ? ' (희망 ' + ans.date + ')' : '');
+    document.getElementById('ask').innerHTML = '<div class="done" tabindex="-1" id="done"><h3>상담 신청이 접수되었습니다</h3>' +
+      '<p>' + esc(ans.name) + '님, 감사합니다. 남겨 주신 내용을 미리 살펴본 뒤 편하신 방법으로 연락드리겠습니다.</p>' +
+      '<dl><dt>분야</dt><dd>' + esc(list(ans.field) + (ans.role ? ' · ' + ans.role : '')) + '</dd>' +
+      '<dt>인원</dt><dd>' + esc(list(ans.count)) + '</dd><dt>시기</dt><dd>' + esc(when) + '</dd>' +
+      '<dt>상담</dt><dd>' + esc(list(ans.how) + (ans.time ? ' · ' + ans.time : '')) + '</dd></dl>' +
+      '<p class="note">입력하신 메일(' + esc(ans.email) + ')로 회사소개서를 보내 드립니다. 몇 분 정도 걸릴 수 있습니다.</p></div>';
+    document.getElementById('done').focus();
+  }
+  next.addEventListener('click', function() {
+    var st = STEPS[cur];
+    if (st.final) return send();
+    if (st.start) { if (checkContact()) saveContact(); return; }
+    if (!(ans[st.id] && ans[st.id].length)) { say(st.multi ? '하나 이상 골라 주세요.' : '하나를 골라 주세요.'); return; }
+    keepText(); cur++; draw(true);
+  });
+  document.getElementById('lead').addEventListener('submit', function(e) { e.preventDefault(); next.click(); });
+  draw(false);
+</script>
+</body>
+</html>
