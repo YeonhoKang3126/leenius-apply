@@ -75,9 +75,9 @@ var body = document.getElementById('body');
 var cur = null;
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function stop(text) { body.innerHTML = '<p class="msg err">' + esc(text) + '</p>'; }
-function top(d) { return '<p class="who">' + esc(d.name) + '님</p><p class="pos">' + esc(d.position) + '</p>'; }
+function whoHtml(d) { return '<p class="who">' + esc(d.name) + '님</p><p class="pos">' + esc(d.position) + '</p>'; }
 function done(d, a) {
-  body.innerHTML = top(d) + '<p class="msg ok">"' + LABEL[a] + '"(으)로 전달되었습니다. 감사합니다.</p>' +
+  body.innerHTML = whoHtml(d) + '<p class="msg ok">"' + LABEL[a] + '"(으)로 전달되었습니다. 감사합니다.</p>' +
     (a === 'pending' ? '<p class="note">결과가 나오면 같은 링크에서 다시 알려 주세요.</p>' : '<p class="note">남겨 주신 의견은 다음 후보자를 찾는 데 반영하겠습니다.</p>');
 }
 function checks(list, sel, name) {
@@ -107,10 +107,10 @@ function detail() {
 }
 function render(d) {
   cur = d;
-  if (d.result) return body.innerHTML = top(d) + '<p class="msg ok">이미 "' + LABEL[d.result] + '"(으)로 전달되어 있습니다. 감사합니다.</p><p class="note">바꿀 내용이 있으면 메일로 회신해 주세요.</p>';
+  if (d.result) return body.innerHTML = whoHtml(d) + '<p class="msg ok">이미 "' + LABEL[d.result] + '"(으)로 전달되어 있습니다. 감사합니다.</p><p class="note">바꿀 내용이 있으면 메일로 회신해 주세요.</p>';
   if (d.expired) return stop('회신 기간(60일)이 지난 링크입니다. 메일로 회신해 주세요.');
   if (!LABEL[pick]) pick = d.answer || '';
-  body.innerHTML = top(d) +
+  body.innerHTML = whoHtml(d) +
     '<div class="opts" role="group" aria-label="서류 검토 결과">' + ['pass', 'fail', 'pending'].map(function(a) {
       return '<button type="button" class="opt" data-a="' + a + '" aria-pressed="' + (a === pick) + '">' + LABEL[a] + '<small>' + SUB[a] + '</small></button>';
     }).join('') + '</div><div id="detail"></div>' +
