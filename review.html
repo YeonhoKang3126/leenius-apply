@@ -24,7 +24,8 @@
   .pos { color: var(--sub); margin: 4px 0 22px; }
   h2 { font-size: 15px; font-weight: 700; color: var(--navy); margin: 26px 0 10px; }
   h2 span { font-weight: 400; color: var(--sub); font-size: 13px; }
-  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt.wide { grid-column: 1 / -1; min-height: 48px; font-weight: 600; }
   .opt { min-height: 56px; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; color: var(--ink); }
   .opt small { display: block; font-weight: 400; color: var(--sub); font-size: 13px; }
   .opt[aria-pressed="true"] { border-color: var(--blue); background: #eef2f8; color: var(--navy); }
@@ -45,7 +46,7 @@
   .msg.err { color: var(--error); }
   .note { color: var(--sub); font-size: 13px; margin: 18px 0 0; }
   footer { text-align: center; color: var(--sub); font-size: 13px; margin-top: 22px; }
-  @media (max-width: 480px) { .opts { grid-template-columns: 1fr; } .wrap { margin: 20px auto 40px; } .body { padding: 22px 20px 24px; } .head { padding: 20px; } }
+  @media (max-width: 360px) { .opts { grid-template-columns: 1fr; } .wrap { margin: 20px auto 40px; } .body { padding: 22px 20px 24px; } .head { padding: 20px; } }
 </style>
 </head>
 <body>
@@ -64,8 +65,8 @@ var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 var HDR = { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON };
 var q = new URLSearchParams(location.search);
 var k = q.get('k') || '', pick = q.get('a') || '';
-var LABEL = { pass: '서류 합격', fail: '불합격', pending: '검토 중·보류' };
-var SUB = { pass: '면접 진행', fail: '이번엔 함께하지 않음', pending: '아직 결정 전' };
+var LABEL = { pass: '서류 합격', fail: '불합격', pending: '검토 중 · 문의' };
+var SUB = { pass: '면접 진행', fail: '이번엔 함께하지 않음', pending: '아직 검토 중이거나 이 후보자에 대해 궁금한 점이 있을 때' };
 // sf-clientreply의 목록과 같게
 var FAIL = ['경력 연차 부족', '경력 연차·직급이 높음', '핵심 직무 경험 부족', '산업·도메인 경험 불일치', '회사 규모·환경 경험 차이',
   '기술·툴 역량 부족', '리더십·관리 경험 부족 또는 과다', '잦은 이직·짧은 근속', '연봉 기대 수준 차이', '학력·자격 요건',
@@ -78,7 +79,7 @@ function stop(text) { body.innerHTML = '<p class="msg err">' + esc(text) + '</p>
 function whoHtml(d) { return '<p class="who">' + esc(d.name) + '님</p><p class="pos">' + esc(d.position) + '</p>'; }
 function done(d, a) {
   body.innerHTML = whoHtml(d) + '<p class="msg ok">"' + LABEL[a] + '"(으)로 전달되었습니다. 감사합니다.</p>' +
-    (a === 'pending' ? '<p class="note">결과가 나오면 같은 링크에서 다시 알려 주세요.</p>' : '<p class="note">남겨 주신 의견은 다음 후보자를 찾는 데 반영하겠습니다.</p>');
+    (a === 'pending' ? '<p class="note">문의 주신 내용은 확인 후 바로 연락드리겠습니다. 결과가 나오면 같은 링크에서 다시 알려 주세요.</p>' : '<p class="note">남겨 주신 의견은 다음 후보자를 찾는 데 반영하겠습니다.</p>');
 }
 function checks(list, sel, name) {
   return '<div class="checks">' + list.map(function(x, i) {
@@ -98,7 +99,8 @@ function detail() {
       '<h2>어떤 점이 좋았나요? <span>(선택)</span></h2>' + checks(GOOD, sel, 'r') +
       '<h2><label for="other">추가 의견 <span>(선택)</span></label></h2><textarea id="other" maxlength="1000">' + esc(d.answer === pick ? d.other : '') + '</textarea>';
   } else {
-    h += '<h2><label for="interview">결과 예상 시점 <span>(선택)</span></label></h2><input type="text" id="interview" maxlength="300" placeholder="예: 이번 주 금요일" value="' + esc(d.answer === pick ? d.interview : '') + '">';
+    h += '<h2><label for="other">문의하실 내용 <span>(선택)</span></label></h2><textarea id="other" maxlength="1000" placeholder="예: 현재 연봉 구성과 희망 처우를 조금 더 자세히 알고 싶습니다">' + esc(d.answer === pick ? d.other : '') + '</textarea>' +
+      '<h2><label for="interview">결과 예상 시점 <span>(선택)</span></label></h2><input type="text" id="interview" maxlength="300" placeholder="예: 이번 주 금요일" value="' + esc(d.answer === pick ? d.interview : '') + '">';
   }
   h += '<h2><label for="direction">포지션 방향에 대한 의견 <span>(선택)</span></label></h2>' +
     '<textarea id="direction" maxlength="2000" placeholder="예: 다음에는 B2B SaaS 영업 경험이 있는 분이면 좋겠습니다">' + esc(d.direction) + '</textarea>' +
@@ -108,11 +110,11 @@ function detail() {
 function render(d) {
   cur = d;
   if (d.result) return body.innerHTML = whoHtml(d) + '<p class="msg ok">이미 "' + LABEL[d.result] + '"(으)로 전달되어 있습니다. 감사합니다.</p><p class="note">바꿀 내용이 있으면 메일로 회신해 주세요.</p>';
-  if (d.expired) return stop('회신 기간(60일)이 지난 링크입니다. 메일로 회신해 주세요.');
+  if (d.expired) return stop('회신 기간(30일)이 지난 링크입니다. 메일로 회신해 주세요.');
   if (!LABEL[pick]) pick = d.answer || '';
   body.innerHTML = whoHtml(d) +
     '<div class="opts" role="group" aria-label="서류 검토 결과">' + ['pass', 'fail', 'pending'].map(function(a) {
-      return '<button type="button" class="opt" data-a="' + a + '" aria-pressed="' + (a === pick) + '">' + LABEL[a] + '<small>' + SUB[a] + '</small></button>';
+      return '<button type="button" class="opt' + (a === 'pending' ? ' wide' : '') + '" data-a="' + a + '" aria-pressed="' + (a === pick) + '">' + LABEL[a] + '<small>' + SUB[a] + '</small></button>';
     }).join('') + '</div><div id="detail"></div>' +
     '<button type="button" class="send" id="send"' + (pick ? '' : ' disabled') + '>회신 보내기</button><div class="msg" id="msg" role="status"></div>' +
     (d.answer ? '<p class="note">지난 회신: ' + LABEL[d.answer] + '</p>' : '');
