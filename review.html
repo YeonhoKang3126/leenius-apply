@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>서류 검토 결과 회신 | 리니어스</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root { --navy: #34445e; --blue: #3d567c; --blue-dark: #2d4262; --ink: #2b2f36; --sub: #5f6773; --line: #e2e6ec; --bg: #f5f6f8; --error: #b3261e; --ok: #2e6b4f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.75 Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+  header { background: #fff; border-bottom: 1px solid var(--line); }
+  header .in { max-width: 680px; margin: 0 auto; padding: 16px 20px; }
+  header img { display: block; }
+  .wrap { max-width: 680px; margin: 32px auto 64px; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px rgba(30,40,55,.08); overflow: hidden; }
+  .head { background: var(--navy); color: #fff; padding: 22px 28px; }
+  .head small { display: block; font-size: 13px; color: #b8c4d6; letter-spacing: 1px; }
+  .head h1 { margin: 4px 0 0; font-size: 20px; line-height: 1.3; font-weight: 700; }
+  .body { padding: 26px 28px 30px; }
+  .who { font-size: 20px; font-weight: 700; margin: 0; line-height: 1.3; }
+  .pos { color: var(--sub); margin: 4px 0 22px; }
+  h2 { font-size: 15px; font-weight: 700; color: var(--navy); margin: 26px 0 10px; }
+  h2 span { font-weight: 400; color: var(--sub); font-size: 13px; }
+  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .opt { min-height: 56px; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; color: var(--ink); }
+  .opt small { display: block; font-weight: 400; color: var(--sub); font-size: 13px; }
+  .opt[aria-pressed="true"] { border-color: var(--blue); background: #eef2f8; color: var(--navy); }
+  .checks { border-top: 1px solid var(--line); }
+  .checks label { display: flex; gap: 10px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .checks input { width: 18px; height: 18px; accent-color: var(--blue); flex: none; }
+  textarea, input[type=text] { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 12px; font: inherit; color: var(--ink); }
+  input[type=text] { min-height: 48px; }
+  textarea { min-height: 96px; resize: vertical; }
+  .hint { font-size: 13px; color: var(--sub); margin: 6px 0 0; }
+  button.send { margin-top: 26px; width: 100%; min-height: 52px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+  button.send:hover { background: var(--blue-dark); }
+  button.send:disabled { background: #a7b0bd; cursor: default; }
+  .opt:focus-visible, button.send:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  textarea:focus, input[type=text]:focus { border-color: var(--blue); outline: none; }
+  .msg { margin-top: 14px; font-size: 15px; }
+  .msg.ok { color: var(--ok); font-weight: 700; }
+  .msg.err { color: var(--error); }
+  .note { color: var(--sub); font-size: 13px; margin: 18px 0 0; }
+  footer { text-align: center; color: var(--sub); font-size: 13px; margin-top: 22px; }
+  @media (max-width: 480px) { .opts { grid-template-columns: 1fr; } .wrap { margin: 20px auto 40px; } .body { padding: 22px 20px 24px; } .head { padding: 20px; } }
+</style>
+</head>
+<body>
+<header><div class="in"><img src="https://yeonhokang3126.github.io/leenius-apply/leenius-logo.png" width="104" height="20" alt="LEENIUS 리니어스"></div></header>
+<div class="wrap">
+  <div class="card">
+    <div class="head"><small>DOCUMENT REVIEW</small><h1>서류 검토 결과 회신</h1></div>
+    <div class="body" id="body"><p class="pos">불러오는 중입니다.</p></div>
+  </div>
+  <footer>리니어스 강연호 이사 · 010-9242-9420 · yh.kang@leenius.com</footer>
+</div>
+<script>
+var API = 'https://qxcrtwtjhllsbgahfqvd.supabase.co/functions/v1/sf-clientreply';
+// 공개 anon 키 (config.js와 같음 — 함수 JWT 검증용, 데이터 접근 권한 없음)
+var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4Y3J0d3RqaGxsc2JnYWhmcXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMxMDUsImV4cCI6MjA2NzAzOTEwNX0.0hd5bIoy1YXWdXM99MoeikrJkSYyAnsKnxLCBgG_5Ms';
+var HDR = { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON };
+var q = new URLSearchParams(location.search);
+var k = q.get('k') || '', pick = q.get('a') || '';
+var LABEL = { pass: '서류 합격', fail: '불합격', pending: '검토 중·보류' };
+var SUB = { pass: '면접 진행', fail: '이번엔 함께하지 않음', pending: '아직 결정 전' };
+// sf-clientreply의 목록과 같게
+var FAIL = ['경력 연차 부족', '경력 연차·직급이 높음', '핵심 직무 경험 부족', '산업·도메인 경험 불일치', '회사 규모·환경 경험 차이',
+  '기술·툴 역량 부족', '리더십·관리 경험 부족 또는 과다', '잦은 이직·짧은 근속', '연봉 기대 수준 차이', '학력·자격 요건',
+  '이력서·지원 동기가 아쉬움', '이미 검토한 후보자(중복)', '포지션 사정(채용 계획 변경·내부 충원)'];
+var GOOD = ['직무 경험', '산업·도메인 경험', '경력 연차', '회사 이력', '성장 가능성'];
+var body = document.getElementById('body');
+var cur = null;
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function stop(text) { body.innerHTML = '<p class="msg err">' + esc(text) + '</p>'; }
+function top(d) { return '<p class="who">' + esc(d.name) + '님</p><p class="pos">' + esc(d.position) + '</p>'; }
+function done(d, a) {
+  body.innerHTML = top(d) + '<p class="msg ok">"' + LABEL[a] + '"(으)로 전달되었습니다. 감사합니다.</p>' +
+    (a === 'pending' ? '<p class="note">결과가 나오면 같은 링크에서 다시 알려 주세요.</p>' : '<p class="note">남겨 주신 의견은 다음 후보자를 찾는 데 반영하겠습니다.</p>');
+}
+function checks(list, sel, name) {
+  return '<div class="checks">' + list.map(function(x, i) {
+    return '<label><input type="checkbox" name="' + name + '" value="' + esc(x) + '"' + (sel.indexOf(x) >= 0 ? ' checked' : '') + '>' + esc(x) + '</label>';
+  }).join('') + '</div>';
+}
+function detail() {
+  var d = cur, box = document.getElementById('detail');
+  if (!pick) { box.innerHTML = ''; return; }
+  var sel = d.answer === pick ? (d.reasons || []) : [];
+  var h = '';
+  if (pick === 'fail') {
+    h += '<h2>불합격 사유 <span>(해당하는 것을 모두 골라 주세요)</span></h2>' + checks(FAIL, sel, 'r') +
+      '<h2><label for="other">그 밖의 사유 <span>(선택)</span></label></h2><textarea id="other" maxlength="1000" placeholder="목록에 없는 내용을 자유롭게 적어 주세요">' + esc(d.answer === pick ? d.other : '') + '</textarea>';
+  } else if (pick === 'pass') {
+    h += '<h2><label for="interview">면접 가능 일정 <span>(선택)</span></label></h2><input type="text" id="interview" maxlength="300" placeholder="예: 다음 주 화·목 오후" value="' + esc(d.answer === pick ? d.interview : '') + '">' +
+      '<h2>어떤 점이 좋았나요? <span>(선택)</span></h2>' + checks(GOOD, sel, 'r') +
+      '<h2><label for="other">추가 의견 <span>(선택)</span></label></h2><textarea id="other" maxlength="1000">' + esc(d.answer === pick ? d.other : '') + '</textarea>';
+  } else {
+    h += '<h2><label for="interview">결과 예상 시점 <span>(선택)</span></label></h2><input type="text" id="interview" maxlength="300" placeholder="예: 이번 주 금요일" value="' + esc(d.answer === pick ? d.interview : '') + '">';
+  }
+  h += '<h2><label for="direction">포지션 방향에 대한 의견 <span>(선택)</span></label></h2>' +
+    '<textarea id="direction" maxlength="2000" placeholder="예: 다음에는 B2B SaaS 영업 경험이 있는 분이면 좋겠습니다">' + esc(d.direction) + '</textarea>' +
+    '<p class="hint">이번 후보자를 보시며 느낀 점을 적어 주시면 다음 추천에 바로 반영합니다.</p>';
+  box.innerHTML = h;
+}
+function render(d) {
+  cur = d;
+  if (d.result) return body.innerHTML = top(d) + '<p class="msg ok">이미 "' + LABEL[d.result] + '"(으)로 전달되어 있습니다. 감사합니다.</p><p class="note">바꿀 내용이 있으면 메일로 회신해 주세요.</p>';
+  if (d.expired) return stop('회신 기간(60일)이 지난 링크입니다. 메일로 회신해 주세요.');
+  if (!LABEL[pick]) pick = d.answer || '';
+  body.innerHTML = top(d) +
+    '<div class="opts" role="group" aria-label="서류 검토 결과">' + ['pass', 'fail', 'pending'].map(function(a) {
+      return '<button type="button" class="opt" data-a="' + a + '" aria-pressed="' + (a === pick) + '">' + LABEL[a] + '<small>' + SUB[a] + '</small></button>';
+    }).join('') + '</div><div id="detail"></div>' +
+    '<button type="button" class="send" id="send"' + (pick ? '' : ' disabled') + '>회신 보내기</button><div class="msg" id="msg" role="status"></div>' +
+    (d.answer ? '<p class="note">지난 회신: ' + LABEL[d.answer] + '</p>' : '');
+  detail();
+  body.querySelectorAll('.opt').forEach(function(b) {
+    b.onclick = function() {
+      var dir = document.getElementById('direction');
+      if (dir) cur.direction = dir.value;
+      pick = b.dataset.a;
+      body.querySelectorAll('.opt').forEach(function(x) { x.setAttribute('aria-pressed', String(x === b)); });
+      document.getElementById('send').disabled = false;
+      detail();
+    };
+  });
+  document.getElementById('send').onclick = function() {
+    var btn = this, msg = document.getElementById('msg');
+    var val = function(id) { var el = document.getElementById(id); return el ? el.value : ''; };
+    var reasons = Array.prototype.map.call(body.querySelectorAll('input[name=r]:checked'), function(x) { return x.value; });
+    if (pick === 'fail' && !reasons.length && !val('other').trim()) { msg.className = 'msg err'; msg.textContent = '불합격 사유를 하나 이상 고르거나 적어 주세요.'; return; }
+    btn.disabled = true; msg.className = 'msg'; msg.textContent = '보내는 중입니다.';
+    fetch(API, { method: 'POST', headers: HDR, body: JSON.stringify({ k: k, a: pick, reasons: reasons, other: val('other'), interview: val('interview'), direction: val('direction') }) })
+      .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, j: j }; }); })
+      .then(function(x) {
+        if (x.ok && x.j.ok) return done(x.j, pick);
+        if (x.j && x.j.error === 'done') return render(x.j);
+        msg.className = 'msg err'; msg.textContent = '전달하지 못했습니다. 잠시 뒤 다시 눌러 주세요.'; btn.disabled = false;
+      })
+      .catch(function() { msg.className = 'msg err'; msg.textContent = '전달하지 못했습니다. 잠시 뒤 다시 눌러 주세요.'; btn.disabled = false; });
+  };
+}
+fetch(API + '?k=' + encodeURIComponent(k), { headers: HDR })
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(d) { d ? render(d) : stop('링크를 찾지 못했습니다. 메일의 버튼을 다시 눌러 주세요.'); })
+  .catch(function() { stop('불러오지 못했습니다. 잠시 뒤 다시 열어 주세요.'); });
+</script>
+</body>
+</html>
