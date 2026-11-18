@@ -133,6 +133,7 @@ async function load() {
     skipped = new Set((await rest('sf_board_seen?select=post&skipped=is.true') || []).map(function(x) { return x.post; }));
   } catch (e) { loadError = e.message; }
   if (!sending) render();
+  loadRespAll();   // 후보자 현황 (5분에 한 번만 읽음)
 }
 async function loadMust(id) {
   try {
@@ -156,8 +157,10 @@ function toast(text, err, keep) {
   if (!keep) toast.t = setTimeout(function() { t.style.display = 'none'; }, 6000);
 }
 // 명령을 넣고 PC가 처리할 때까지 결과를 기다림
-async function send(cmd, orderId, args) {
-  if (sending) return;
+// opts.keep: 끝난 뒤 결과 알림을 띄우지 않음(부른 쪽이 화면에 보여 줌) · 돌려주는 값 = PC가 남긴 { status, result }
+async function send(cmd, orderId, args, opts) {
+  if (sending) return null;
+  opts = opts || {};
   sending = true; render();
   try {
     toast('PC에 전달하는 중입니다. 30초 안에 처리됩니다.', false, true);
@@ -167,11 +170,15 @@ async function send(cmd, orderId, args) {
     for (let i = 0; i < 75; i++) {
       await new Promise(function(r) { setTimeout(r, 4000); });
       const c = (await rest('sf_commands?select=status,result&id=eq.' + id))[0];
-      if (c && (c.status === 'done' || c.status === 'failed')) { toast(c.result || '처리했습니다.', c.status === 'failed'); return; }
+      if (c && (c.status === 'done' || c.status === 'failed')) {
+        if (opts.keep && c.status === 'done') $('toast').style.display = 'none'; else toast(c.result || '처리했습니다.', c.status === 'failed');
+        return c;
+      }
       if (c && c.status === 'taken') toast('PC에서 처리하는 중입니다.', false, true);
     }
     toast('PC 응답을 기다리는 중입니다. 잠시 뒤 새로고침해 주세요.', true);
-  } catch (e) { toast(e.message, true); }
+    return null;
+  } catch (e) { toast(e.message, true); return null; }
   finally { sending = false; await load(); }
 }
 
@@ -308,9 +315,15 @@ function homeView() {
     if (o.running) live.push('<div class="box">' + liveBox(o, srSite(o), true) + btn('수집 중지', 'stop', o.id, 'sec') + '</div>');
     if (o.jk && o.jk.running) live.push('<div class="box">' + liveBox(o, jkSite(o), true) + btn('잡코리아 수집 중지', 'jkstop', o.id, 'sec') + '</div>');
   });
+  workBoxes().forEach(function(x) { live.push(x); });
   if (live.length) h += '<h2>진행 중</h2>' + live.join('');
-  if (state.orders.some(function(o) { return o.ap; })) h += '<h2>자동운전</h2><div class="box"><div class="s">' + (state.apPaused ? '일시정지됨' : '돌아가는 중') + '</div>' +
-    (state.apPaused ? btn('자동운전 재개', 'apresume', '') : btn('자동운전 일시정지', 'apstop', '', 'sec')) + '</div>';
+  if (state.orders.some(function(o) { return o.ap; }) || (state.apJobs || []).length) h += '<h2>자동운전</h2>' + apBox();
+  if (respAll) {
+    const n = stageCounts(respAll);
+    h += '<h2>후보자 현황</h2><div class="stat">' + STAGES.filter(function(st) { return st[0] !== 'off'; }).map(function(st) {
+      return '<div class="ln">' + st[1] + '<span class="r"><b>' + (n[st[0]] || 0) + '</b>명</span></div>';
+    }).join('') + '</div>';
+  }
   h += '<h2>오더 ' + state.orders.length + '건</h2><div class="list">' + (state.orders.map(function(o) {
     return '<button class="row" data-open="' + esc(o.id) + '"><div class="t">' + esc(o.title) + '</div><div class="s">' + esc(stateLine(o)) + (o.must ? ' · 필수 <b>' + o.must + '</b>' : '') + '</div></button>';
   }).join('') || '<div class="empty">열려 있는 오더가 없습니다.</div>') + '</div>' + foot();
@@ -369,6 +382,7 @@ function orderView(o) {
   const cnt = list ? { all: list.length, sr: list.filter(function(c) { return !isJk(c); }).length, jk: list.filter(isJk).length } : null;
   h += '<h2>필수 추천 후보 ' + (cnt ? cnt.all + '명 (사람인 ' + cnt.sr + ' · 잡코리아 ' + cnt.jk + ')' : o.must + '명') + '</h2>';
   if (cnt) h += '<div class="tabs">' + [['all', '전체 ' + cnt.all], ['sr', '사람인 ' + cnt.sr], ['jk', '잡코리아 ' + cnt.jk]].map(function(t) { return '<button data-must="' + t[0] + '" class="' + (mustTab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
+  h += offerBox(o, list);
   h += '<div class="box">';
   const shown = list ? list.filter(function(c) { return mustTab === 'all' || (mustTab === 'jk') === isJk(c); }) : list;
   if (list === undefined) h += '<div class="s">불러오는 중…</div>';
@@ -380,8 +394,148 @@ function orderView(o) {
       '<div class="s">' + esc(c.detail.reason || c.reason) + '</div>' + (c.offered ? '<div class="s"><b>제안 완료</b></div>' : '') +
       (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">이력서 열기</a>' : '') + '</div>';
   }).join('');
-  $('main').innerHTML = h + '</div>';
+  h += '</div><h2>후보자 진행 단계</h2>' + stageBox(o);
+  h += '<h2>고객사 요구사항 업데이트' + ((o.upd || []).length ? ' ' + o.upd.filter(function(x) { return !x.off; }).length + '건 반영 중' : '') + '</h2>' + updBox(o);
+  $('main').innerHTML = h;
 }
+
+const isJkId = function(c) { return /^JK\d+$/.test(String(c.residx)); };
+// ── 필수 추천자 제안 (2026-11-18): ① [명단 확인] → PC가 적합도 순 명단을 돌려줌 → ② [발송 확정]을 눌러야 보냄 (PC는 30분 안에만 받음)
+//  '전체'에서는 사람인·잡코리아를 나눠 각각 확인·확정 (확장 팝업 sendAllMust와 같은 방식)
+let offerPv = null;   // { orderId, at, parts: [{ site, id, text, ready, done }] }
+async function offerPreview(o, sites) {
+  const parts = [];
+  for (const site of sites) {
+    const id = (site === 'jk' ? 'jk:' : '') + o.id;
+    const c = await send('offer', id, {}, { keep: true });
+    if (!c) return;
+    parts.push({ site: site, id: id, text: c.result || '', ready: c.status === 'done' && /30분 안에 확정/.test(c.result || '') });
+  }
+  offerPv = { orderId: o.id, at: Date.now(), parts: parts };
+  render();
+}
+function offerBox(o, list) {
+  const pv = offerPv && offerPv.orderId === o.id && Date.now() - offerPv.at < 30 * 60000 ? offerPv : null;
+  if (pv) {
+    return '<div class="box" style="margin-bottom:8px">' + pv.parts.map(function(p) {
+      return '<div class="c"><div class="t"><span class="tag">' + siteWord(p.site) + '</span>보낼 명단</div><div class="mono" style="white-space:pre-wrap">' + esc(p.text) + '</div>' +
+        (p.done ? '<div class="s"><b>발송 확정함</b></div>' : p.ready ? btn('✅ ' + siteWord(p.site) + ' 발송 확정', 'offerok', p.id) : '') + '</div>';
+    }).join('') + (pv.parts.some(function(p) { return p.ready && !p.done; }) ? '<button class="btn sec" id="offerCancel">취소 (보내지 않음)</button>' : '<button class="btn sec" id="offerClose">닫기</button>') + '</div>';
+  }
+  if (!list || !list.length) return '';
+  const left = list.filter(function(c) { return !c.offered; });
+  const sr = left.filter(function(c) { return !isJkId(c); }).length, jk = left.filter(isJkId).length;
+  const sites = mustTab === 'sr' ? (sr ? [''] : []) : mustTab === 'jk' ? (jk ? ['jk'] : []) : [sr ? '' : null, jk ? 'jk' : null].filter(function(x) { return x !== null; });
+  if (!sites.length) return '';
+  const label = mustTab === 'all' ? '📨 필수 추천자 제안 — 명단 확인 (사람인 ' + sr + ' · 잡코리아 ' + jk + ')' : '📨 ' + siteWord(mustTab === 'jk' ? 'jk' : '') + ' 필수 추천자 제안 — 명단 확인 (' + (mustTab === 'jk' ? jk : sr) + '명)';
+  return '<button class="btn" data-offerpv="' + sites.join(',') + '"' + (sending || !online() ? ' disabled' : '') + '>' + esc(label) + '</button>' +
+    '<div class="s" style="margin:6px 0 8px">PC가 적합도 높은 순으로 보낼 명단을 먼저 보여 줍니다. [발송 확정]을 눌러야 보내고, 사이트마다 따로 확정합니다.</div>';
+}
+
+// ── 후보자 진행 단계 (읽기만 — 단계 바꾸기는 문자가 함께 나가 팝업 후보자 현황에서) ──
+const STAGES = [['new', '신규 회신'], ['rev', '작업 중'], ['pm', 'PM 검토'], ['rec', '고객사 추천'], ['wait', '회신 대기'], ['off', '드랍·마감']];
+let resp = {}, respAll = null, respAllAt = 0;
+const RESP_COLS = 'residx,candidate_name,stage,doc_result,interview,final_pass_at,responded_at,seen_at,created_at,pm_reply,intent:answers->>intent';
+async function loadResp(id) {
+  try { resp[id] = await rest('sf_responses?select=' + RESP_COLS + '&order_id=eq.' + encodeURIComponent(id) + '&order=created_at.desc'); } catch (e) { resp[id] = null; }
+  render();
+}
+async function loadRespAll() {
+  if (Date.now() - respAllAt < 5 * 60000) return;
+  respAllAt = Date.now();
+  try { respAll = await rest('sf_responses?select=order_id,' + RESP_COLS + '&order=created_at.desc'); } catch (e) { respAll = null; }
+  render();
+}
+function stageOf(r) {
+  if (r.stage === 'closed' || r.stage === 'dropped' || r.intent === 'decline') return 'off';
+  if (r.stage === 'recommended') return 'rec';
+  if (r.stage === 'pm') return 'pm';
+  if (r.stage === 'reviewing' || r.seen_at) return 'rev';
+  return r.responded_at ? 'new' : 'wait';
+}
+function respPeople(rows) {   // 같은 후보자가 여러 번 응답했으면 최신 하나
+  const seen = new Set();
+  return (rows || []).filter(function(r) { const k = (r.order_id || '') + '|' + (r.residx || r.candidate_name); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+function stageCounts(rows) {
+  const n = {};
+  respPeople(rows).forEach(function(r) { const k = stageOf(r); n[k] = (n[k] || 0) + 1; });
+  return n;
+}
+function respTags(r) {
+  const t = [];
+  if (r.doc_result === 'pass') t.push('서류 통과');
+  if (r.doc_result === 'fail') t.push('서류 함께 못함');
+  if (r.interview) t.push('면접');
+  if (r.final_pass_at) t.push('🏅 최종 합격');
+  if (r.stage === 'pm' && r.pm_reply) t.push('PM 회신: ' + ({ pass: '통과', fail: '탈락', hold: '보류', pending: '검토 중' }[r.pm_reply] || r.pm_reply));
+  if (r.intent === 'decline') t.push('미지원');
+  return t;
+}
+function stageBox(o) {
+  const rows = resp[o.id];
+  if (rows === undefined) return '<div class="box"><div class="s">불러오는 중…</div></div>';
+  if (rows === null) return '<div class="box"><div class="s">불러오지 못했습니다.</div></div>';
+  const people = respPeople(rows);
+  if (!people.length) return '<div class="box"><div class="s">아직 수락·응답한 후보자가 없습니다.</div></div>';
+  return '<div class="box">' + STAGES.map(function(st) {
+    const g = people.filter(function(r) { return stageOf(r) === st[0]; });
+    if (!g.length) return '';
+    return '<details class="c"' + (st[0] === 'off' || st[0] === 'wait' ? '' : ' open') + '><summary class="t">' + st[1] + ' ' + g.length + '명</summary>' + g.map(function(r) {
+      return '<div class="s">' + esc(r.candidate_name || r.residx) + (isJkId(r) ? ' <span class="tag">잡코리아</span>' : '') + respTags(r).map(function(x) { return ' <span class="tag">' + esc(x) + '</span>'; }).join('') + '</div>';
+    }).join('') + '</details>';
+  }).join('') + '<div class="s" style="margin-top:8px">단계 변경(고객사 추천·서류 결과 등)은 안내 문자가 함께 나가 PC 팝업 후보자 현황에서 합니다.</div></div>';
+}
+
+// ── 고객사 요구사항 업데이트 (오더 원문보다 우선 — 다음 전략·명단 평가·정밀 매칭부터 반영) ──
+const UPD_SRC = { me: '직접', pm: 'PM 탈락 메모', fail: '불합격 사유' };
+function updBox(o) {
+  const items = (o.upd || []).slice().sort(function(a, b) { return String(b.at).localeCompare(String(a.at)); });
+  return '<div class="box">' + (items.length ? items.map(function(x) {
+    return '<div class="c"' + (x.off ? ' style="opacity:.55"' : '') + '><div class="s">' + esc(String(x.at).slice(5).replace('-', '/')) + ' · ' + esc(UPD_SRC[x.src] || '요구사항') + (x.name ? ' · ' + esc(x.name) : '') + (x.off ? ' · 서칭에서 뺌' : '') + '</div>' +
+      '<div style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(x.text) + '</div>' +
+      '<button class="btn sec" style="min-height:40px" data-upd="' + esc(x.id) + '" data-op="' + (x.off ? 'on' : 'off') + '"' + (sending || !online() ? ' disabled' : '') + '>' + (x.off ? '다시 반영' : '서칭에서 빼기') + '</button></div>';
+  }).join('') : '<div class="s">아직 없습니다.</div>') +
+    '<label>새 업데이트<textarea id="updText" rows="3" maxlength="1000" style="display:block;width:100%;margin-top:4px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:16px inherit;font-family:inherit" placeholder="예: 영어 회화 필수로 바뀜, 연봉 상한 6천"></textarea></label>' +
+    btn('업데이트 추가', 'updadd', o.id, 'sec') +
+    '<div class="s" style="margin-top:6px">내부 기준으로만 쓰이고 후보자에게 보이지 않습니다. 이미 판정한 후보자를 다시 보려면 PC 팝업의 [🔁 업데이트 반영 재평가]를 쓰세요.</div></div>';
+}
+
+// ── 연속 제안·정밀 매칭·대기열·자동운전 진행 ──
+function workBoxes() {
+  const w = state.work || {};
+  const out = [];
+  const bar = function(i, n) { return '<div class="bar"><i style="width:' + (n ? Math.min(100, Math.round(i / n * 100)) : 0) + '%"></i></div>'; };
+  [['offer', ''], ['jkOffer', 'jk']].forEach(function(k) {
+    const b = w[k[0]];
+    if (!b) return;
+    out.push('<div class="box"><div class="t"><span class="tag">' + siteWord(k[1]) + '</span>📨 연속 제안 · ' + esc(b.title) + '</div>' + bar(b.index, b.total) +
+      '<div class="s">' + (b.active ? '보내는 중 · ' : '끝남 · ') + num(b.index) + ' / ' + num(b.total) + '명 · 보냄 <b>' + num(b.sent) + '</b>' + (b.fails ? ' · 실패 ' + num(b.fails) : '') + (b.label ? ' · ' + esc(b.label) : '') + '</div>' +
+      (!b.active && b.stop ? '<div class="s">' + esc(b.stop) + '</div>' : '') + '</div>');
+  });
+  [['detail', ''], ['jkDetail', 'jk']].forEach(function(k) {
+    const m = w[k[0]];
+    if (!m || !m.active) return;
+    out.push('<div class="box"><div class="t"><span class="tag">' + siteWord(k[1]) + '</span>🔬 정밀 매칭 · ' + esc(m.title) + '</div>' + bar(m.index, m.total) +
+      '<div class="s">' + num(m.index) + ' / ' + num(m.total) + '명 판정</div></div>');
+  });
+  if ((w.offerQueue || []).length || w.jkQueue) out.push('<div class="box"><div class="t">⏳ 제안 대기열</div>' + (w.offerQueue || []).map(function(q, i) {
+    return '<div class="s">' + (i + 1) + '. ' + esc(q.title) + ' · ' + num(q.n) + '명' + (q.label ? ' · ' + esc(q.label) : '') + '</div>';
+  }).join('') + (w.jkQueue ? '<div class="s">잡코리아 대기 ' + num(w.jkQueue) + '건</div>' : '') + '<div class="s">앞 작업이 끝나면 차례로 보냅니다.</div></div>');
+  return out;
+}
+function apBox() {
+  const jobs = state.apJobs || [];
+  let h = '<div class="box"><div class="s">' + (state.apPaused ? '일시정지됨' : '돌아가는 중') + (state.apQueue && state.apQueue.length ? ' · 대기 ' + state.apQueue.length + '건' : '') + '</div>';
+  h += jobs.map(function(j) {
+    const last = (j.log || [])[0];
+    return '<div class="c"><div class="t">' + esc(j.title) + '</div><div class="s">' + esc(AP_LABEL[j.stage] || j.stage) + (j.wait ? ' · ' + esc(j.wait) : '') +
+      (j.pool ? ' · 명단 ' + num(j.pool) + '명' : '') + (j.evaluated ? ' · 1차 ' + num(j.evaluated) + '명' : '') + (j.detailDone ? ' · 정밀 ' + num(j.detailDone) + '명' : '') + '</div>' +
+      (last && last.m ? '<div class="mono">' + esc(last.m) + '</div>' : '') + (j.endReason ? '<div class="s">' + esc(j.endReason) + '</div>' : '') + '</div>';
+  }).join('');
+  return h + (state.apPaused ? btn('자동운전 재개', 'apresume', '') : btn('자동운전 일시정지', 'apstop', '', 'sec')) + '</div>';
+}
+const AP_LABEL = { plan: '전략 만드는 중', grace: '시작 대기', collect: '수집 대기', collecting: '전체 수집 중', eval: '평가 대기', evaluating: '명단 평가 중', done: '완료', hold: '보류', error: '오류로 멈춤' };
 
 function render() {
   const o = view && state ? state.orders.find(function(x) { return x.id === view; }) : null;
@@ -390,19 +544,30 @@ function render() {
   $('title').textContent = o ? o.title : 'searchFlow';
   $('reload').hidden = !session;
   // 입력 중인 값은 다시 그려도 유지
-  const keep = { goal: $('goal') && $('goal').value, hour: $('hour') && $('hour').value };
+  const keep = { goal: $('goal') && $('goal').value, hour: $('hour') && $('hour').value, upd: $('updText') && $('updText').value };
   if (!session) loginView(); else if (o) orderView(o); else homeView();
   if (keep.goal && $('goal')) $('goal').value = keep.goal;
   if (keep.hour && $('hour')) $('hour').value = keep.hour;
+  if (keep.upd && $('updText')) $('updText').value = keep.upd;
 }
 
 document.addEventListener('click', function(ev) {
   const b = ev.target.closest('button');
   if (!b) return;
   if (b.id === 'out') { saveSession(null); state = null; view = null; render(); return; }
-  if (b.dataset.open) { view = b.dataset.open; siteTab = ''; mustTab = 'all'; scrollTo(0, 0); render(); loadMust(view); return; }
+  if (b.dataset.open) { view = b.dataset.open; siteTab = ''; mustTab = 'all'; scrollTo(0, 0); render(); loadMust(view); loadResp(view); return; }
   if (b.dataset.site !== undefined) { siteTab = b.dataset.site; render(); return; }
   if (b.dataset.must) { mustTab = b.dataset.must; render(); return; }
+  const cur = view && state ? state.orders.find(function(x) { return x.id === view; }) : null;
+  if (b.dataset.offerpv && cur) { offerPreview(cur, b.dataset.offerpv.split(',')); return; }
+  if (b.id === 'offerClose') { offerPv = null; render(); return; }
+  if (b.id === 'offerCancel') {
+    const ready = offerPv ? offerPv.parts.filter(function(p) { return p.ready && !p.done; }) : [];
+    offerPv = null; render();
+    (async function() { for (const p of ready) await send('offerno', p.id); })();
+    return;
+  }
+  if (b.dataset.upd && cur) { send('updset', cur.id, { id: b.dataset.upd, op: b.dataset.op }); return; }
   if (b.dataset.skip) {
     if (!confirm('이 오더를 무시할까요? 앱과 알림에 다시 나오지 않습니다.')) return;
     const post = b.dataset.skip;
@@ -414,6 +579,18 @@ document.addEventListener('click', function(ev) {
   const cmd = b.dataset.cmd;
   if (!cmd) return;
   const args = {};
+  if (cmd === 'offerok') {
+    const p = offerPv && offerPv.parts.find(function(x) { return x.id === b.dataset.id; });
+    if (!p || !confirm(siteWord(p.site) + ' 명단에 포지션 제안을 보냅니다. 보낸 제안은 되돌릴 수 없습니다. 발송할까요?')) return;
+    send('offerok', p.id).then(function(c) { if (c && c.status === 'done') { p.done = true; render(); } });
+    return;
+  }
+  if (cmd === 'updadd') {
+    const t = ($('updText').value || '').trim();
+    if (!t) { toast('업데이트 내용을 적어 주세요', true); return; }
+    send('updadd', b.dataset.id, { text: t }).then(function(c) { if (c && c.status === 'done' && $('updText')) $('updText').value = ''; });
+    return;
+  }
   if (cmd === 'poolstart') {
     const g = parseInt($('goal').value, 10);
     if (!(g >= 1 && g <= 500)) { toast('필수 목표는 1~500명으로 적어 주세요', true); return; }
@@ -425,7 +602,7 @@ document.addEventListener('click', function(ev) {
   send(cmd, b.dataset.id, args);
 });
 $('back').onclick = function() { view = null; scrollTo(0, 0); render(); };
-$('reload').onclick = function() { load(); if (view) loadMust(view); };
+$('reload').onclick = function() { load(); respAllAt = 0; loadRespAll(); if (view) { loadMust(view); loadResp(view); } };
 document.addEventListener('visibilitychange', function() { if (!document.hidden) load(); });
 // PC는 진행 중일 때 2분마다 올림 → 수집 중 20초, 아니면 30초마다 읽음. '○초 전'은 1초마다 갱신
 let lastLoad = 0;
