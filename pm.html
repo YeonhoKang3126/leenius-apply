@@ -50,9 +50,9 @@ var SUB = { pass: '면접 진행', fail: '이번엔 함께하지 않음', pendin
 var KEYS = ['pass', 'fail', 'pending', 'hold'];
 // 사전 검토 요청 (정식 추천 전 — 추천 진행 여부 의견)
 function useReview() {
-  LABEL = { go: '추천 진행', ask: '확인 필요', no: '추천 어려움' };
-  SUB = { go: '후보자와 상세 통화 후 정식 추천', ask: '조건·궁금한 점 먼저 확인', no: '이번 포지션엔 진행하지 않음' };
-  KEYS = ['go', 'ask', 'no'];
+  LABEL = { go: '추천 가능', no: '추천 어려움', ask: '확인 필요' };
+  SUB = { go: '정식 추천 진행해도 좋음', no: '이번 포지션엔 진행하지 않음', ask: '조건·궁금한 점 먼저 확인' };
+  KEYS = ['go', 'no', 'ask'];
   document.title = '후보자 검토 의견 회신 | 리니어스';
   document.querySelector('.head').textContent = '후보자 검토 의견 회신';
 }
