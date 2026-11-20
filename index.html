@@ -255,11 +255,13 @@
       </div>
 
       <div class="q" data-x="other">
-        <h2><span class="num"></span>🔒 다른 곳에서 진행 중인 전형이 있나요? <small>선택 · 일정을 맞춰 드리기 위해 여쭙니다.</small></h2>
+        <h2><span class="num"></span>🔒 다른 곳에서 진행 중이거나 합격한 전형이 있나요?
+          <small>선택 · 미리 알고 있으면 고객사에 전형 일정을 앞당겨 달라고 요청하거나, 처우 협상 때 근거로 삼아 더 좋은 조건을 이끌어 내는 데 도움이 됩니다. 회사 이름은 적지 않으셔도 되며, 고객사에 그대로 전달하지 않습니다.</small></h2>
         <div class="chips">
           <button class="opt" data-v="none">없어요</button><button class="opt" data-v="doc">서류 진행 중</button>
-          <button class="opt" data-v="interview">면접 진행 중</button><button class="opt" data-v="offer">합격 통보 받음</button>
+          <button class="opt" data-v="interview">면접 진행 중</button><button class="opt" data-v="offer">합격 (처우 협의 중 포함)</button>
         </div>
+        <input class="xin hidden" id="xOtherText" maxlength="200" placeholder="선택 · 업종·직무, 단계, 결정 예정 시기 (예: IT 기업 PM, 2차 면접 12월 초 / 합격, 12/10까지 회신)">
       </div>
 
       <div class="q" data-x="birth">
@@ -537,6 +539,7 @@ function xRefresh() {
   show($('xAfterBox'), xa.call === 'after');
   document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.classList.toggle('on', xa.after === b.dataset.xa); });
   show($('xLeftBox'), xa.status === 'left');
+  show($('xOtherText'), !!xa.other && xa.other !== 'none');
   var base = +xMoney('xBase') || 0, fixed = +xMoney('xFixed') || 0, bonus = +xMoney('xBonus') || 0, allow = +xMoney('xAllow') || 0;
   ['xBase', 'xFixed', 'xBonus', 'xAllow'].forEach(function(id) { $(id).classList.toggle('on', !!$(id).value); });
   show($('xTotal'), !!base);
@@ -572,6 +575,7 @@ function openMore() {
   setMoney('xFixed', extra.fixed || ''); setMoney('xBonus', extra.bonus || ''); setMoney('xAllow', extra.allow || '');
   $('xLeftWhen').value = extra.left_when || ''; $('xGap').value = extra.gap || '';
   $('xReasonText').value = extra.reason_text || '';
+  $('xOtherText').value = extra.other_text || '';
   $('xBirth').value = extra.birth || '';
   $('sub').textContent = '사전 인터뷰 · 약 3분';
   show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
@@ -592,6 +596,7 @@ $('moreSubmit').addEventListener('click', function() {
   if (xa.call === 'after') p.after = xa.after;
   if (xa.status === 'left') { p.left_when = $('xLeftWhen').value; p.gap = $('xGap').value; }
   if (xa.other) p.other = xa.other;
+  if (xa.other && xa.other !== 'none' && $('xOtherText').value.trim()) p.other_text = $('xOtherText').value.trim();
   $('moreSubmit').disabled = true; $('moreSubmit').textContent = '보내는 중…';
   show($('moreErr'), false);
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, extra: p }) })
