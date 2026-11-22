@@ -176,18 +176,19 @@
       <h2>감사합니다!</h2>
       <p id="doneText"></p>
       <div class="moreask hidden" id="moreAsk">
-        <h3 id="moreAskTitle">사전 인터뷰 (선택 · 약 3분)</h3>
-        <p id="moreAskText">지원하시는 기업에 더 설득력 있게 추천드리기 위해 몇 가지만 더 여쭙겠습니다. 통화 대신 편하실 때 눌러서 답해 주시면 됩니다.</p>
+        <h3 id="moreAskTitle">다음 단계: 사전 인터뷰 (약 4분)</h3>
+        <p id="moreAskText">고객사에 후보자님을 제대로 추천드리고, 처우 협상에서도 후보자님께 유리하게 말씀드리기 위해 꼭 필요한 단계입니다. 답변을 받은 뒤 추천서를 작성해 진행합니다. 대부분 눌러서 고르시면 됩니다.</p>
         <button class="submit" id="moreGo" type="button">지금 답하기</button>
         <button class="close" id="moreLater" type="button">나중에 할게요 (내일 문자로 링크를 한 번 보내 드려요)</button>
+        <button class="close" id="moreCall" type="button">설문 대신 10분 통화로 할게요</button>
       </div>
       <p class="note">선택을 바꾸고 싶으시면 메일의 버튼을 다시 눌러 주세요.</p>
       <button class="close" id="closeBtn">창 닫기</button>
     </div>
 
-    <!-- 사전 인터뷰 (지원 의사 회신 뒤 선택) — 추천서 작성용, 🔒 답변은 고객사에 그대로 전달하지 않음 -->
+    <!-- 사전 인터뷰 (지원 의사 회신 뒤 · 2026-11-22부터 추천 진행에 필요, 통화로 대신 가능) — 추천서 작성용, 🔒 답변은 고객사에 그대로 전달하지 않음 -->
     <div id="more" class="hidden">
-      <div class="lock">🔒 표시가 있는 질문의 답변은 <b>헤드헌터만 보며 고객사에 그대로 전달되지 않습니다.</b> 추천서와 이력서에는 일반적인 표현으로 정리해 드리니 편하게 답해 주세요.</div>
+      <div class="lock">🔒 표시가 있는 질문의 답변은 <b>헤드헌터만 보며 고객사에 그대로 전달되지 않습니다.</b> 면접 일정과 처우 협상을 후보자님 상황에 맞춰 준비하는 데 씁니다. 정답이 있는 질문이 아니니 솔직하게 골라 주실수록 도움이 됩니다.</div>
 
       <div class="q" data-x="call">
         <h2><span class="num"></span>진행 중 연락은 어떻게 드리면 좋을까요?
@@ -221,6 +222,24 @@
         </div>
       </div>
 
+      <div class="q" data-x="stage">
+        <h2><span class="num"></span>🔒 지금 이직은 어느 정도로 생각하고 계신가요?</h2>
+        <button class="opt" data-v="active">적극적으로 이직을 준비하고 있어요</button>
+        <button class="opt" data-v="open">좋은 자리가 있으면 옮길 생각이에요</button>
+        <button class="opt" data-v="this">이번 포지션이라서 관심이 생겼어요</button>
+        <button class="opt" data-v="unsure">아직 고민하고 있어요</button>
+      </div>
+
+      <div class="q" data-x="other">
+        <h2><span class="num"></span>🔒 다른 곳에서 진행 중이거나 합격한 전형이 있나요?
+          <small>미리 알고 있으면 고객사에 전형 일정을 앞당겨 달라고 요청하거나, 처우 협상 때 근거로 삼아 더 좋은 조건을 이끌어 내는 데 도움이 됩니다. 회사 이름은 적지 않으셔도 되며, 고객사에 그대로 전달하지 않습니다.</small></h2>
+        <div class="chips">
+          <button class="opt" data-v="none">없어요</button><button class="opt" data-v="doc">서류 진행 중</button>
+          <button class="opt" data-v="interview">면접 진행 중</button><button class="opt" data-v="offer">합격 (처우 협의 중 포함)</button>
+        </div>
+        <input class="xin hidden" id="xOtherText" maxlength="200" placeholder="선택 · 업종·직무, 단계, 결정 예정 시기 (예: IT 기업 PM, 2차 면접 12월 초 / 합격, 12/10까지 회신)">
+      </div>
+
       <div class="q" data-x="reason">
         <h2><span class="num"></span>🔒 이직을 생각하게 된 이유는 무엇인가요?
           <small>해당하는 것을 모두 골라 주세요.</small></h2>
@@ -232,6 +251,16 @@
           <button class="opt" data-m="other">기타</button>
         </div>
         <textarea id="xReasonText" maxlength="500" placeholder="선택 · 조금 더 자세히 들려주시면 맞는 자리를 찾고 면접 준비를 돕는 데 큰 도움이 됩니다."></textarea>
+      </div>
+
+      <div class="q" data-x="decide">
+        <h2><span class="num"></span>최종 합격하신다면 무엇을 가장 중요하게 보고 결정하실 건가요?
+          <small>최대 2개까지 골라 주세요. 고객사와 조율할 때 이 부분을 먼저 챙기겠습니다.</small></h2>
+        <div class="chips">
+          <button class="opt" data-d="pay">연봉·처우</button><button class="opt" data-d="growth">직무·성장 가능성</button>
+          <button class="opt" data-d="stable">회사 안정성·규모</button><button class="opt" data-d="place">근무지·근무 형태</button>
+          <button class="opt" data-d="culture">조직 분위기·리더십</button><button class="opt" data-d="wlb">워라밸</button>
+        </div>
       </div>
 
       <div class="q" data-x="pay">
@@ -256,6 +285,30 @@
         <button class="opt" data-v="policy">회사 기준에 맞출게요</button>
       </div>
 
+      <div class="q" data-x="floor">
+        <h2><span class="num"></span>🔒 이 금액보다 낮으면 옮기기 어렵다는 최소 연봉이 있으신가요?
+          <small>희망 연봉과 별개로, 협상할 때 넘지 말아야 할 선을 알고 있어야 무리 없이 조율할 수 있습니다. 고객사에 전달하지 않습니다. (기본 연봉 기준, 만원)</small></h2>
+        <div class="money"><label>최소 연봉</label><input type="text" inputmode="numeric" id="xFloor" maxlength="6" placeholder="예: 5000"><span>만원</span></div>
+        <button class="opt" data-v="none" style="margin-top:8px;">따로 정해 둔 선은 없어요</button>
+      </div>
+
+      <div class="q" data-x="go">
+        <h2><span class="num"></span>🔒 그 이상의 처우가 제시되고 최종 합격하신다면 어떻게 하실 것 같으세요?
+          <small>지금 마음에 가장 가까운 것을 골라 주세요. 면접 일정과 협상 속도를 맞추는 데 씁니다.</small></h2>
+        <button class="opt" data-v="now">바로 입사를 결정할 것 같아요</button>
+        <button class="opt" data-v="check">처우·조건을 확인하고 입사할 것 같아요</button>
+        <button class="opt" data-v="compare">지금 회사와 비교해 보고 고민할 것 같아요</button>
+        <button class="opt" data-v="unsure">아직은 잘 모르겠어요</button>
+      </div>
+
+      <div class="q hidden" data-x="counter">
+        <h2><span class="num"></span>🔒 지금 회사에서 붙잡거나 조건을 올려 준다면요?
+          <small>막판에 일정이 꼬이지 않도록 미리 여쭙니다.</small></h2>
+        <button class="opt" data-v="leave">그래도 이직할 거예요</button>
+        <button class="opt" data-v="think">조건을 보고 고민할 것 같아요</button>
+        <button class="opt" data-v="stay">남을 수도 있을 것 같아요</button>
+      </div>
+
       <div class="q" data-x="commute">
         <h2><span class="num"></span>출퇴근은 주로 어떻게 하실 예정인가요?
           <small>근무지에 따라 주차가 어려운 곳이 있어 여쭙니다.</small></h2>
@@ -264,14 +317,11 @@
         <button class="opt" data-v="both">둘 다 괜찮아요</button>
       </div>
 
-      <div class="q" data-x="other">
-        <h2><span class="num"></span>🔒 다른 곳에서 진행 중이거나 합격한 전형이 있나요?
-          <small>선택 · 미리 알고 있으면 고객사에 전형 일정을 앞당겨 달라고 요청하거나, 처우 협상 때 근거로 삼아 더 좋은 조건을 이끌어 내는 데 도움이 됩니다. 회사 이름은 적지 않으셔도 되며, 고객사에 그대로 전달하지 않습니다.</small></h2>
-        <div class="chips">
-          <button class="opt" data-v="none">없어요</button><button class="opt" data-v="doc">서류 진행 중</button>
-          <button class="opt" data-v="interview">면접 진행 중</button><button class="opt" data-v="offer">합격 (처우 협의 중 포함)</button>
-        </div>
-        <input class="xin hidden" id="xOtherText" maxlength="200" placeholder="선택 · 업종·직무, 단계, 결정 예정 시기 (예: IT 기업 PM, 2차 면접 12월 초 / 합격, 12/10까지 회신)">
+      <div class="q" data-x="limits">
+        <h2><span class="num"></span>입사 전에 미리 알아 두어야 할 조건이 있을까요?
+          <small>가족 상황, 통근 거리, 재택·유연 근무, 이미 잡힌 휴가·일정 등</small></h2>
+        <div class="chips"><button class="opt" data-v="none">없어요</button><button class="opt" data-v="yes">있어요</button></div>
+        <input class="xin hidden" id="xLimitText" maxlength="200" placeholder="짧게 적어 주세요 (예: 12월 셋째 주 해외 일정, 주 1회 재택 희망)">
       </div>
 
       <div class="q" data-x="birth">
@@ -560,8 +610,8 @@ $('closeBtn').addEventListener('click', function() {
 // ── 사전 인터뷰 (선택) ──
 //  지원 의사 회신 뒤 감사 화면에서 [지금 답하기] / [나중에 할게요](다음 날 문자 1회) · 문자 링크는 ?t=…&more=1로 바로 이 화면
 var extra = {};          // 서버에 저장된 사전 인터뷰 답
-var xa = { reason: [] }; // 고르는 중인 답
-var X_REQ = ['call', 'fast', 'status', 'reason', 'raise', 'commute'];
+var xa = { reason: [], decide: [] }; // 고르는 중인 답
+var X_REQ = ['call', 'fast', 'status', 'stage', 'other', 'reason', 'decide', 'raise', 'floor', 'go', 'commute', 'limits'];   // counter는 재직 중일 때만 (2026-11-22 필수화)
 function xq(key) { return document.querySelector('#more .q[data-x="' + key + '"]'); }
 function xMoney(id) { return $(id).value.replace(/\D/g, ''); }
 function xRefresh() {
@@ -569,24 +619,31 @@ function xRefresh() {
     var k = box.dataset.x;
     box.querySelectorAll('.opt[data-v]').forEach(function(b) { b.classList.toggle('on', xa[k] === b.dataset.v); });
     box.querySelectorAll('.opt[data-m]').forEach(function(b) { b.classList.toggle('on', xa.reason.indexOf(b.dataset.m) >= 0); });
+    box.querySelectorAll('.opt[data-d]').forEach(function(b) { b.classList.toggle('on', xa.decide.indexOf(b.dataset.d) >= 0); });
   });
   show($('xAfterBox'), xa.call === 'after');
   document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.classList.toggle('on', xa.after === b.dataset.xa); });
   show($('xLeftBox'), xa.status === 'left');
   show($('xOtherText'), !!xa.other && xa.other !== 'none');
+  show(xq('counter'), xa.status === 'employed');
+  if (xa.status !== 'employed') delete xa.counter;
+  show($('xLimitText'), xa.limits === 'yes');
+  if ($('xFloor').value) xa.floor = 'amount'; else if (xa.floor === 'amount') delete xa.floor;
+  $('xFloor').classList.toggle('on', !!$('xFloor').value);
   var base = +xMoney('xBase') || 0, fixed = +xMoney('xFixed') || 0, bonus = +xMoney('xBonus') || 0, allow = +xMoney('xAllow') || 0;
   ['xBase', 'xFixed', 'xBonus', 'xAllow'].forEach(function(id) { $(id).classList.toggle('on', !!$(id).value); });
   show($('xTotal'), !!base);
   $('xTotal').textContent = '합계 ' + (base + fixed + bonus + allow).toLocaleString('ko-KR') + '만원';
   $('xBirth').classList.toggle('on', !!$('xBirth').value);
   var n = 0;
-  document.querySelectorAll('#more .q').forEach(function(box) { var num = box.querySelector('.num'); if (num) num.textContent = (++n) + '. '; });
-  var ok = X_REQ.every(function(k) { return k === 'reason' ? xa.reason.length : xa[k]; }) && !(xa.call === 'after' && !xa.after) && !!base && /^\d{4}-\d{2}-\d{2}$/.test($('xBirth').value);
+  document.querySelectorAll('#more .q').forEach(function(box) { var num = box.querySelector('.num'); if (num) num.textContent = box.classList.contains('hidden') ? '' : (++n) + '. '; });
+  var ok = X_REQ.every(function(k) { return k === 'reason' || k === 'decide' ? xa[k].length : xa[k]; }) && !(xa.call === 'after' && !xa.after) && !!base && /^\d{4}-\d{2}-\d{2}$/.test($('xBirth').value) &&
+    !(xa.status === 'employed' && !xa.counter) && !(xa.limits === 'yes' && !$('xLimitText').value.trim());
   $('moreSubmit').disabled = !ok;
   $('moreSubmit').textContent = ok ? '보내기' : '필수 항목을 골라 주세요';
 }
 document.querySelectorAll('#more .q[data-x] .opt[data-v]').forEach(function(b) {
-  b.addEventListener('click', function() { xa[b.closest('.q').dataset.x] = b.dataset.v; if (b.dataset.v !== 'after' && b.closest('.q').dataset.x === 'call') delete xa.after; xRefresh(); });
+  b.addEventListener('click', function() { xa[b.closest('.q').dataset.x] = b.dataset.v; if (b.closest('.q').dataset.x === 'floor') $('xFloor').value = ''; if (b.dataset.v !== 'after' && b.closest('.q').dataset.x === 'call') delete xa.after; xRefresh(); });
 });
 document.querySelectorAll('#more .opt[data-m]').forEach(function(b) {
   b.addEventListener('click', function() {
@@ -595,15 +652,25 @@ document.querySelectorAll('#more .opt[data-m]').forEach(function(b) {
     xRefresh();
   });
 });
+// 결정 기준: 최대 2개 (세 번째를 누르면 가장 먼저 고른 것을 뺌)
+document.querySelectorAll('#more .opt[data-d]').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var i = xa.decide.indexOf(b.dataset.d);
+    if (i >= 0) xa.decide.splice(i, 1); else { xa.decide.push(b.dataset.d); if (xa.decide.length > 2) xa.decide.shift(); }
+    xRefresh();
+  });
+});
+$('xLimitText').addEventListener('input', xRefresh);
 document.querySelectorAll('#xAfterBox .opt').forEach(function(b) { b.addEventListener('click', function() { xa.after = b.dataset.xa; xRefresh(); }); });
-['xBase', 'xFixed', 'xBonus', 'xAllow'].forEach(function(id) { moneyInput($(id), function() {}); $(id).addEventListener('input', xRefresh); });
+['xBase', 'xFixed', 'xBonus', 'xAllow', 'xFloor'].forEach(function(id) { moneyInput($(id), function() {}); $(id).addEventListener('input', xRefresh); });
 $('xBirth').addEventListener('change', xRefresh);
 $('xBirth').max = (new Date().getFullYear() - 16) + '-12-31';
 
 function openMore() {
   // 저장된 답 채우기
-  xa = { reason: (extra.reason || []).slice() };
-  ['call', 'after', 'fast', 'status', 'raise', 'commute', 'other'].forEach(function(k) { if (extra[k]) xa[k] = extra[k]; });
+  xa = { reason: (extra.reason || []).slice(), decide: (extra.decide || []).slice() };
+  ['call', 'after', 'fast', 'status', 'raise', 'commute', 'other', 'stage', 'go', 'counter', 'limits'].forEach(function(k) { if (extra[k]) xa[k] = extra[k]; });
+  if (extra.floor === 'none') xa.floor = 'none';
   var setMoney = function(id, v) { $(id).value = v ? Number(v).toLocaleString('ko-KR') : ''; };
   setMoney('xBase', extra.base || answers.salary_now || '');
   setMoney('xFixed', extra.fixed || ''); setMoney('xBonus', extra.bonus || ''); setMoney('xAllow', extra.allow || '');
@@ -611,7 +678,9 @@ function openMore() {
   $('xReasonText').value = extra.reason_text || '';
   $('xOtherText').value = extra.other_text || '';
   $('xBirth').value = extra.birth || '';
-  $('sub').textContent = '사전 인터뷰 · 약 3분';
+  setMoney('xFloor', /^\d+$/.test(extra.floor || '') ? extra.floor : '');
+  $('xLimitText').value = extra.limit_text || '';
+  $('sub').textContent = '사전 인터뷰 · 약 4분';
   show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
   xRefresh();
   window.scrollTo(0, 0);
@@ -621,8 +690,16 @@ $('moreLater').addEventListener('click', function() {
   $('moreLater').disabled = true;
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, later: true }) })
     .then(function(r) { if (!r.ok) throw new Error(r.status); })
-    .then(function() { $('moreAskText').textContent = '내일 문자로 링크를 보내 드릴게요. 편하실 때 답해 주시면 됩니다.'; show($('moreGo'), false); show($('moreLater'), false); })
+    .then(function() { $('moreAskText').textContent = '내일 문자로 링크를 보내 드릴게요. 답변을 받은 뒤 추천서를 작성해 진행하겠습니다.'; show($('moreGo'), false); show($('moreLater'), false); show($('moreCall'), false); })
     .catch(function() { $('moreLater').disabled = false; });
+});
+// 설문 대신 통화 (참여 의사로 봄 → 헤드헌터에게 알림, 다음 날 문자 예약은 취소)
+$('moreCall').addEventListener('click', function() {
+  $('moreCall').disabled = true;
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, callInstead: true }) })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); })
+    .then(function() { $('moreAskText').textContent = '알겠습니다. 고르신 연락 시간에 맞춰 10분 정도 통화로 여쭙겠습니다. 편하실 때 위 버튼으로 직접 답하셔도 됩니다.'; show($('moreLater'), false); show($('moreCall'), false); })
+    .catch(function() { $('moreCall').disabled = false; });
 });
 $('moreSubmit').addEventListener('click', function() {
   var p = { call: xa.call, fast: xa.fast, status: xa.status, reason: xa.reason, raise: xa.raise, commute: xa.commute,
@@ -631,6 +708,10 @@ $('moreSubmit').addEventListener('click', function() {
   if (xa.status === 'left') { p.left_when = $('xLeftWhen').value; p.gap = $('xGap').value; }
   if (xa.other) p.other = xa.other;
   if (xa.other && xa.other !== 'none' && $('xOtherText').value.trim()) p.other_text = $('xOtherText').value.trim();
+  p.stage = xa.stage; p.decide = xa.decide; p.go = xa.go; p.limits = xa.limits;
+  p.floor = xa.floor === 'none' ? 'none' : xMoney('xFloor');
+  if (xa.status === 'employed') p.counter = xa.counter;
+  if (xa.limits === 'yes') p.limit_text = $('xLimitText').value.trim();
   $('moreSubmit').disabled = true; $('moreSubmit').textContent = '보내는 중…';
   show($('moreErr'), false);
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, extra: p }) })
@@ -646,7 +727,7 @@ function showMoreAsk() {
   var on = answers.intent === 'apply';
   show($('moreAsk'), on);
   if (!on) return;
-  if (extra.at) { $('moreAskTitle').textContent = '사전 인터뷰 답변을 보내 주셨습니다'; $('moreAskText').textContent = '고칠 내용이 있으시면 아래 버튼으로 수정하실 수 있습니다.'; $('moreGo').textContent = '답변 고치기'; show($('moreLater'), false); }
+  if (extra.at) { $('moreAskTitle').textContent = '사전 인터뷰 답변을 보내 주셨습니다'; $('moreAskText').textContent = '고칠 내용이 있으시면 아래 버튼으로 수정하실 수 있습니다.'; $('moreGo').textContent = '답변 고치기'; show($('moreLater'), false); show($('moreCall'), false); }
 }
 
 // 오더가 마감된 링크: 지원서 대신 정중한 마감 안내
