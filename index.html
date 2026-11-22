@@ -54,7 +54,7 @@
   .q .sub2 { font-size: 13px; color: var(--sub); margin: 4px 0 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
   .chips .opt { width: auto; display: inline-block; margin: 0; padding: 10px 13px; }
-  #phoneIn.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
+  #phoneIn.on, #emailIn.on { border-color: var(--blue); background: var(--pick); font-weight: 600; }
   .xin { width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; margin: 0 0 8px; }
   .money label { flex-shrink: 0; width: 92px; font-size: 14px; color: #4a5260; }
   .total { font-size: 13.5px; color: var(--navy); font-weight: 600; text-align: right; margin: 0 0 8px; }
@@ -119,10 +119,12 @@
       </div>
 
       <div class="q hidden" data-key="phone">
-        <h2><span class="num"></span>휴대폰 번호를 적어 주세요
-          <small>채용 사이트에 연락처를 비공개로 해 두시면 수락하신 포지션이라도 저희에게 번호가 보이지 않습니다. 면접 일정 안내와 고객사와의 사전 미팅 연결에 꼭 필요해 여쭙니다. 이번 진행 연락에만 사용합니다.</small></h2>
-        <input type="tel" id="phoneIn" class="xin" inputmode="tel" autocomplete="tel" maxlength="13" placeholder="예: 010-1234-5678">
+        <h2><span class="num"></span>휴대폰 번호와 이메일을 적어 주세요
+          <small>채용 사이트에 연락처를 비공개로 해 두시면 수락하신 포지션이라도 저희에게 번호·이메일이 보이지 않습니다. 면접 일정 안내, 서류 전달과 고객사와의 사전 미팅 연결에 꼭 필요해 여쭙니다. 이번 진행 연락에만 사용합니다.</small></h2>
+        <input type="tel" id="phoneIn" class="xin" inputmode="tel" autocomplete="tel" maxlength="13" placeholder="휴대폰 번호 (예: 010-1234-5678)">
         <p class="err hidden" id="phoneErr">휴대폰 번호를 확인해 주세요 (예: 010-1234-5678)</p>
+        <input type="email" id="emailIn" class="xin" inputmode="email" autocomplete="email" maxlength="100" placeholder="이메일 (예: name@example.com)" style="margin-top:10px;">
+        <p class="err hidden" id="emailErr">이메일 주소를 확인해 주세요 (예: name@example.com)</p>
       </div>
 
       <div class="q hidden" data-key="contact">
@@ -312,7 +314,7 @@ function visibleKeys() {
     if (answers.resume === 'saramin') keys.push('updated');
     keys.push('start', 'salary_now', 'desired');   // 입사 가능 시기·현재 연봉·희망 연봉 (추천서에 씀)
   }
-  if (answers.intent === 'apply' || answers.intent === 'call') keys.push('phone', 'contact', 'when');   // 휴대폰 번호 필수 (비공개 연락처 대비 — 2026-11-20)
+  if (answers.intent === 'apply' || answers.intent === 'call') keys.push('phone', 'email', 'contact', 'when');   // 휴대폰 번호·이메일 필수 (비공개 연락처 대비 — 2026-11-20, 이메일 11-22)
   return keys;
 }
 
@@ -478,6 +480,14 @@ function phoneSet() {
 }
 $('phoneIn').addEventListener('input', function() { var d = phoneSet(); this.value = phoneFmt(d); show($('phoneErr'), false); refresh(); });
 $('phoneIn').addEventListener('blur', function() { show($('phoneErr'), !!this.value && !answers.phone); });
+// 이메일: 형식만 확인
+function emailSet() {
+  var v = $('emailIn').value.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && v.length <= 100) answers.email = v; else delete answers.email;
+  $('emailIn').classList.toggle('on', !!answers.email);
+}
+$('emailIn').addEventListener('input', function() { emailSet(); show($('emailErr'), false); refresh(); });
+$('emailIn').addEventListener('blur', function() { show($('emailErr'), !!this.value.trim() && !answers.email); });
 // 연봉은 숫자만 (만원 단위) — 1,000 단위 쉼표는 보기 좋게만
 function moneyInput(el, onVal) {
   el.addEventListener('input', function() {
@@ -680,6 +690,7 @@ else fetch(API + '?t=' + encodeURIComponent(token))
       $('startText').value = d.answers.start_text || '';
       delete answers.start_text;
       if (answers.phone) { $('phoneIn').value = phoneFmt(answers.phone); phoneSet(); }
+      if (answers.email) { $('emailIn').value = answers.email; emailSet(); }
       if (answers.salary_now) $('salaryNow').value = Number(answers.salary_now).toLocaleString('ko-KR');
       if (d.answers.desired_amount) $('desiredAmount').value = Number(d.answers.desired_amount).toLocaleString('ko-KR');
       delete answers.desired_amount;
