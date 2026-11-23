@@ -92,6 +92,15 @@
         <button class="opt" data-v="needs_update">업데이트가 필요해요 (업데이트 후 알려드릴게요)</button>
       </div>
 
+      <div class="q hidden" data-key="cohide">
+        <h2><span class="num"></span><span class="portal">사람인</span> 이력서에 경력 회사 이름이 보이게 되어 있나요?
+          <small>회사 이름을 비공개로 해 두시면 저희에게도 회사명이 가려져 보여 추천서에 빠지게 됩니다. 비공개로 해 두신 줄 모르시는 경우가 많아 여쭙니다.</small></h2>
+        <button class="opt" data-v="open">네, 공개되어 있어요</button>
+        <button class="opt" data-v="hidden">비공개로 해 두었어요</button>
+        <button class="opt" data-v="unsure">잘 모르겠어요</button>
+        <textarea id="coNames" class="hidden" style="margin-top:8px" maxlength="400" rows="3" placeholder="경력 회사 이름을 최근 순으로 적어 주세요&#10;예) ○○전자 (2021~현재) / △△솔루션 (2017~2021)"></textarea>
+      </div>
+
       <div class="q hidden" data-key="start">
         <h2><span class="num"></span>최종 합격하시면 언제부터 입사하실 수 있나요?
           <small>현재 회사 인수인계 기간 등을 생각해 대략적으로 골라 주세요. 정확하지 않아도 괜찮습니다.</small></h2>
@@ -361,7 +370,7 @@ function visibleKeys() {
   var keys = ['intent'];
   if (answers.intent === 'apply') {
     keys.push('resume');
-    if (answers.resume === 'saramin') keys.push('updated');
+    if (answers.resume === 'saramin') keys.push('updated', 'cohide');   // 회사 이름 비공개 확인 (2026-11-24)
     keys.push('start', 'salary_now', 'desired');   // 입사 가능 시기·현재 연봉·희망 연봉 (추천서에 씀)
   }
   if (answers.intent === 'apply' || answers.intent === 'call') keys.push('phone', 'email', 'contact', 'when');   // 휴대폰 번호·이메일 필수 (비공개 연락처 대비 — 2026-11-20, 이메일 11-22)
@@ -458,8 +467,11 @@ function renderSlots() {
 }
 
 function refresh() {
-  ['resume', 'updated', 'start', 'salary_now', 'desired', 'phone', 'contact'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
+  ['resume', 'updated', 'cohide', 'start', 'salary_now', 'desired', 'phone', 'contact'].forEach(function(k) { show(q(k), visibleKeys().indexOf(k) >= 0); });
   show($('startText'), answers.start === 'custom');
+  var coNeed = visibleKeys().indexOf('cohide') >= 0 && (answers.cohide === 'hidden' || answers.cohide === 'unsure');
+  show($('coNames'), coNeed);
+  $('coNames').classList.toggle('on', !!$('coNames').value.trim());
   show($('desiredBox'), answers.desired === 'amount');
   $('salaryNow').classList.toggle('on', !!answers.salary_now);
   $('desiredAmount').classList.toggle('on', !!$('desiredAmount').value);
@@ -488,7 +500,8 @@ function refresh() {
   $('submit').textContent = declined ? '응답 보내고 마치기' : busy ? '파일 올리는 중…' : '보내기';
   $('submit').disabled = busy || !visibleKeys().every(function(k) { return answers[k]; }) ||
     (visibleKeys().indexOf('start') >= 0 && answers.start === 'custom' && !$('startText').value.trim()) ||
-    (visibleKeys().indexOf('desired') >= 0 && answers.desired === 'amount' && !$('desiredAmount').value);
+    (visibleKeys().indexOf('desired') >= 0 && answers.desired === 'amount' && !$('desiredAmount').value) ||
+    (coNeed && !$('coNames').value.trim());
 }
 
 var UPLOAD_ERR = { size: '10MB 이하 파일만 올릴 수 있어요', type: '지원하지 않는 파일 형식이에요', too_many: '올릴 수 있는 파일 수를 넘었어요' };
@@ -520,6 +533,7 @@ $('fileInput').addEventListener('change', function() {
 });
 
 $('startText').addEventListener('input', refresh);
+$('coNames').addEventListener('input', refresh);
 // 휴대폰 번호: 010으로 시작하는 10~11자리만 받음, 보기 좋게 하이픈
 function phoneFmt(d) { return d.length < 4 ? d : d.length < 8 ? d.slice(0, 3) + '-' + d.slice(3) : d.slice(0, 3) + '-' + d.slice(3, d.length - 4) + '-' + d.slice(-4); }
 function phoneSet() {
@@ -579,10 +593,11 @@ $('submit').addEventListener('click', function() {
   visibleKeys().forEach(function(k) { payload[k] = answers[k]; });
   if (payload.start === 'custom') payload.start_text = $('startText').value.trim();
   if (payload.desired === 'amount') payload.desired_amount = $('desiredAmount').value.replace(/\D/g, '');
+  if (payload.cohide === 'hidden' || payload.cohide === 'unsure') payload.co_names = $('coNames').value.trim();
   payload.memo = $('memo').value;
   $('submit').disabled = true;
   $('submit').textContent = '보내는 중…';
-  if (payload.intent === 'decline') { delete payload.resume; delete payload.updated; }
+  if (payload.intent === 'decline') { delete payload.resume; delete payload.updated; delete payload.cohide; delete payload.co_names; }
   payload.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
   show($('err'), false);
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, answers: payload }) })
@@ -770,6 +785,8 @@ else fetch(API + '?t=' + encodeURIComponent(token))
       delete answers.memo;
       $('startText').value = d.answers.start_text || '';
       delete answers.start_text;
+      $('coNames').value = d.answers.co_names || '';
+      delete answers.co_names;
       if (answers.phone) { $('phoneIn').value = phoneFmt(answers.phone); phoneSet(); }
       if (answers.email) { $('emailIn').value = answers.email; emailSet(); }
       if (answers.salary_now) $('salaryNow').value = Number(answers.salary_now).toLocaleString('ko-KR');
