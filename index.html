@@ -60,7 +60,9 @@
   .total { font-size: 13.5px; color: var(--navy); font-weight: 600; text-align: right; margin: 0 0 8px; }
   .reopen { background: #eef3f9; border: 1px solid #d5e0ee; color: #34445e; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; margin-bottom: 18px; }
   /* 상세 JD 보기 (2026-11-24) */
-  .jdbtn { margin-top: 10px; padding: 7px 14px; border: 1px solid rgba(240,243,247,.55); border-radius: 8px; background: transparent; color: #f0f3f7; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .headrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .headrow h1 { flex: 1; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+  .jdbtn { flex: none; white-space: nowrap; padding: 5px 11px; border: 1px solid rgba(240,243,247,.55); border-radius: 8px; background: transparent; color: #f0f3f7; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .jdbtn:focus-visible, .jdclose:focus-visible { outline: 2px solid #f0f3f7; outline-offset: 2px; }
   .jdwrap { position: fixed; inset: 0; background: rgba(30,40,55,.45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; overflow-y: auto; }
   .jdwrap.hidden, .jdbtn.hidden { display: none; }
@@ -80,9 +82,8 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <h1 id="title">지원 의사 확인</h1>
+    <div class="headrow"><h1 id="title">지원 의사 확인</h1><button type="button" id="jdBtn" class="jdbtn hidden" aria-haspopup="dialog">📄 상세 JD 보기</button></div>
     <p id="sub">잠시만 기다려 주세요…</p>
-    <button type="button" id="jdBtn" class="jdbtn hidden" aria-haspopup="dialog">📄 상세 JD 보기</button>
   </div>
   <div id="jdWrap" class="jdwrap hidden" role="dialog" aria-modal="true" aria-labelledby="jdTitle">
     <div class="jdbox">
