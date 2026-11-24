@@ -59,6 +59,22 @@
   .money label { flex-shrink: 0; width: 92px; font-size: 14px; color: #4a5260; }
   .total { font-size: 13.5px; color: var(--navy); font-weight: 600; text-align: right; margin: 0 0 8px; }
   .reopen { background: #eef3f9; border: 1px solid #d5e0ee; color: #34445e; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; margin-bottom: 18px; }
+  /* 상세 JD 보기 (2026-11-24) */
+  .jdbtn { margin-top: 10px; padding: 7px 14px; border: 1px solid rgba(240,243,247,.55); border-radius: 8px; background: transparent; color: #f0f3f7; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .jdbtn:focus-visible, .jdclose:focus-visible { outline: 2px solid #f0f3f7; outline-offset: 2px; }
+  .jdwrap { position: fixed; inset: 0; background: rgba(30,40,55,.45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; overflow-y: auto; }
+  .jdwrap.hidden, .jdbtn.hidden { display: none; }
+  .jdbox { background: #fff; border-radius: 12px; width: 100%; max-width: 640px; box-shadow: 0 8px 24px rgba(30,40,55,.2); }
+  .jdhead { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--navy); color: #f0f3f7; border-radius: 12px 12px 0 0; padding: 14px 18px; }
+  .jdhead h2 { margin: 0; font-size: 16px; }
+  .jdclose { border: 0; background: rgba(255,255,255,.15); color: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .jdbody { padding: 18px 20px 22px; font-size: 14.5px; line-height: 1.75; color: var(--text); }
+  .jdbody h3 { font-size: 14.5px; color: var(--navy); margin: 16px 0 4px; }
+  .jdbody h3:first-child { margin-top: 0; }
+  .jdbody ul { margin: 2px 0; padding-left: 20px; }
+  .jdbody p { margin: 2px 0; }
+  .jdbottom { padding: 0 20px 20px; }
+  .jdbottom button { width: 100%; padding: 13px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -66,6 +82,14 @@
   <div class="head">
     <h1 id="title">지원 의사 확인</h1>
     <p id="sub">잠시만 기다려 주세요…</p>
+    <button type="button" id="jdBtn" class="jdbtn hidden" aria-haspopup="dialog">📄 상세 JD 보기</button>
+  </div>
+  <div id="jdWrap" class="jdwrap hidden" role="dialog" aria-modal="true" aria-labelledby="jdTitle">
+    <div class="jdbox">
+      <div class="jdhead"><h2 id="jdTitle">채용 상세 내용 (Job Description)</h2><button type="button" class="jdclose" id="jdClose">닫기</button></div>
+      <div class="jdbody" id="jdBody"></div>
+      <div class="jdbottom"><button type="button" id="jdBack">확인했습니다 · 지원서로 돌아가기</button></div>
+    </div>
   </div>
   <div class="card">
     <div id="loading" class="msg"><p>불러오는 중…</p></div>
@@ -804,12 +828,42 @@ function fail(text) {
   $('loading').appendChild(p);
 }
 
+// 상세 JD 보기 (2026-11-24): 사람인 메신저로 링크만 받은 후보자도 메일처럼 JD를 언제든 확인
+function esc(s) { return String(s || '').replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function jdHtml(text) {
+  var out = '', inUl = false;
+  var close = function() { if (inUl) { out += '</ul>'; inUl = false; } };
+  String(text || '').split('\n').forEach(function(raw) {
+    var line = raw.trim();
+    if (!line) { close(); return; }
+    if (/^■/.test(line)) { close(); var h = line.replace(/^■\s*/, ''); if (h) out += '<h3>' + esc(h) + '</h3>'; return; }
+    if (/^(\*\s*-|-|\*|•)\s/.test(line)) { if (!inUl) { out += '<ul>'; inUl = true; } out += '<li>' + esc(line.replace(/^(\*\s*-|-|\*|•)\s*/, '')) + '</li>'; return; }
+    close(); out += '<p>' + esc(line) + '</p>';
+  });
+  close();
+  return out;
+}
+var jdLast = null;
+function jdOpen() { jdLast = document.activeElement; show($('jdWrap'), true); document.body.style.overflow = 'hidden'; $('jdClose').focus(); }
+function jdHide() { show($('jdWrap'), false); document.body.style.overflow = ''; if (jdLast) jdLast.focus(); }
+function setJd(text) {
+  if (!text) return;
+  $('jdBody').innerHTML = jdHtml(text);
+  show($('jdBtn'), true);
+  $('jdBtn').onclick = jdOpen;
+  $('jdClose').onclick = jdHide;
+  $('jdBack').onclick = jdHide;
+  $('jdWrap').addEventListener('click', function(e) { if (e.target === $('jdWrap')) jdHide(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !$('jdWrap').classList.contains('hidden')) jdHide(); });
+}
+
 if (!token) fail('링크가 올바르지 않습니다. 메일의 버튼을 다시 눌러 주세요.');
 else fetch(API + '?t=' + encodeURIComponent(token))
   .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(function(d) {
     if (d.closed) { showClosed(d); return; }
     $('title').textContent = d.position || '지원 의사 확인';
+    setJd(d.jd);
     setPortal(d.site);
     $('sub').textContent = d.name + ' 님, 아래 항목을 눌러 선택해 주세요. (1분이면 충분합니다)';
     show($('reopenBox'), !!d.reopened);
