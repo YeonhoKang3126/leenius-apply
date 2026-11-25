@@ -100,7 +100,7 @@
       <div class="q" data-key="intent">
         <h2><span class="num"></span>제안드린 포지션에 지원하시겠어요?</h2>
         <button class="opt" data-v="apply">네, 지원하겠습니다</button>
-        <button class="opt" data-v="call">통화로 조금 더 듣고 결정하고 싶어요</button>
+        <!-- 2026-11-26 사용자: '통화로 조금 더 듣고 결정' 없앰 — 설문·필요한 정보를 다 받은 뒤 통화하는 편이 효율적 (예전에 고른 응답은 서버가 그대로 받음) -->
         <button class="opt" data-v="decline">이번에는 지원하지 않겠습니다</button>
       </div>
 
@@ -882,6 +882,7 @@ else fetch(API + '?t=' + encodeURIComponent(token))
     extra = (d.answers && d.answers.extra) || {};
     if (d.answers) {
       answers = Object.assign({}, d.answers);
+      if (answers.intent === 'call') delete answers.intent;   // 통화 선택지는 없앰 — 예전에 통화를 골랐으면 지원·미지원 중 다시 고르게
       delete answers.extra;
       $('memo').value = d.answers.memo || '';
       delete answers.memo;
