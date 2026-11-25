@@ -537,7 +537,7 @@ function refresh() {
   $('whenDate').classList.toggle('on', !any && !!$('whenDate').value);
   $('whenTime').classList.toggle('on', !any && !!$('whenTime').value);
   document.querySelectorAll('.q[data-key]').forEach(function(box) {
-    box.querySelectorAll('.opt').forEach(function(b) { b.classList.toggle('on', answers[box.dataset.key] === b.dataset.v); });
+    box.querySelectorAll('.opt[data-v]').forEach(function(b) { b.classList.toggle('on', answers[box.dataset.key] === b.dataset.v); });
   });
   var declined = answers.intent === 'decline';
   show($('docsBox'), answers.intent === 'apply' && renderSlots() > 0);
@@ -622,7 +622,8 @@ function moneyInput(el, onVal) {
 }
 moneyInput($('salaryNow'), function(d) { if (d) answers.salary_now = d; else delete answers.salary_now; });
 moneyInput($('desiredAmount'), function() {});
-document.querySelectorAll('.q[data-key] .opt').forEach(function(b) {
+// 2026-11-26: 값(data-v)이 있는 선택지만 — '퇴근 후' 아래 시간대 버튼(data-sa)까지 잡아 답을 지우던 문제
+document.querySelectorAll('.q[data-key] .opt[data-v]').forEach(function(b) {
   b.addEventListener('click', function() {
     if (b.dataset.v === 'custom') setTimeout(function() { $('startText').focus(); }, 0);
     if (b.dataset.v === 'amount') setTimeout(function() { $('desiredAmount').focus(); }, 0);
