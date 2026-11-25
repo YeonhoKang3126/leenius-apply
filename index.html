@@ -235,7 +235,7 @@
 
     <!-- 사전 인터뷰 (지원 의사 회신 뒤 · 2026-11-22부터 추천 진행에 필요, 통화로 대신 가능) — 추천서 작성용, 🔒 답변은 고객사에 그대로 전달하지 않음 -->
     <div id="more" class="hidden">
-      <div class="moreask" id="moreStep" style="margin-top:0;"><h3>지원 마지막 단계 (2/2) · 사전 인터뷰</h3><p style="margin:0;">이 설문까지 보내 주셔야 <b>지원이 완료되고 바로 추천을 진행</b>합니다. 작성 전에는 추천이 진행되지 않습니다. 약 4분이면 끝나요.</p></div>
+      <div class="moreask" id="moreStep" style="margin-top:0;"><h3>지원 마지막 단계 (2/2) · 사전 인터뷰</h3><p style="margin:0;">이 설문까지 보내 주셔야 <b>지원이 완료되고 바로 추천을 진행</b>합니다. 작성 전에는 추천이 진행되지 않습니다. 약 4분이면 끝나요.</p><p class="hidden" id="moreStepNote" style="margin:8px 0 0;font-size:13px;color:#4a5260;"></p></div>
       <div class="lock">🔒 표시가 있는 질문의 답변은 <b>헤드헌터만 보며 고객사에 그대로 전달되지 않습니다.</b> 면접 일정과 처우 협상을 후보자님 상황에 맞춰 준비하는 데 씁니다. 정답이 있는 질문이 아니니 솔직하게 골라 주실수록 도움이 됩니다.</div>
 
       <div class="q" data-x="call">
@@ -386,6 +386,7 @@
     <div id="moreDone" class="msg hidden">
       <h2>감사합니다!</h2>
       <p><b>지원이 완료되었습니다.</b> 보내 주신 내용으로 추천서를 작성해 진행하겠습니다. 이 창은 닫으셔도 됩니다.</p>
+      <p id="moreDoneNote" style="font-size:14px;color:#4a5260;"></p>
       <p class="note">고치고 싶으시면 같은 링크로 다시 들어오시면 됩니다.</p>
     </div>
   </div>
@@ -664,7 +665,8 @@ $('submit').addEventListener('click', function() {
       $('doneText').textContent = doneMessage() + (answers.intent === 'apply' ? '' : ' 이 창은 닫으셔도 됩니다.');
       show($('form'), false);
       // 2026-11-26: 지원하기로 하면 감사 화면 대신 바로 사전 인터뷰로 (지원 마지막 단계 — 작성해야 지원 완료)
-      if (answers.intent === 'apply' && !extra.at) { openMore(); return; }
+      //  1단계 감사 화면의 안내(이력서 업데이트 요청·아직 안 올린 서류)는 사전 인터뷰 위·완료 화면에 그대로 보여 줌
+      if (answers.intent === 'apply' && !extra.at) { stepNote = doneMessage(); openMore(); return; }
       show($('done'), true);
       showMoreAsk();
     })
@@ -684,6 +686,7 @@ $('closeBtn').addEventListener('click', function() {
 
 // ── 사전 인터뷰 (선택) ──
 //  지원 의사 회신 뒤 감사 화면에서 [지금 답하기] / [나중에 할게요](다음 날 문자 1회) · 문자 링크는 ?t=…&more=1로 바로 이 화면
+var stepNote = '';       // 지원 1단계 제출 뒤 안내 (서류·이력서 업데이트) — 사전 인터뷰 화면에도 보여 줌
 var extra = {};          // 서버에 저장된 사전 인터뷰 답
 var xa = { reason: [], decide: [] }; // 고르는 중인 답
 var X_REQ = ['call', 'fast', 'status', 'stage', 'other', 'reason', 'decide', 'raise', 'floor', 'go', 'commute', 'limits'];   // counter는 재직 중일 때만 (2026-11-22 필수화)
@@ -765,13 +768,15 @@ function openMore() {
   $('sub').textContent = '사전 인터뷰 · 약 4분';
   show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
   show($('moreStep'), !extra.at);
+  $('moreStepNote').textContent = stepNote ? '✓ 지원 의사를 받았습니다. ' + stepNote.replace(/^지원 의사를 확인했습니다\.\s*/, '') : '';
+  show($('moreStepNote'), !!stepNote && !extra.at);
   xRefresh();
   window.scrollTo(0, 0);
 }
 $('moreGo').addEventListener('click', openMore);
 $('moreLater2').addEventListener('click', function() {
   show($('more'), false); show($('done'), true); $('sub').textContent = '';
-  $('doneText').textContent = '아직 지원이 완료되지 않았습니다.';
+  $('doneText').textContent = '아직 지원이 완료되지 않았습니다.' + (stepNote ? ' ' + stepNote.replace(/^지원 의사를 확인했습니다\.\s*(서류 준비가 끝나면 진행 상황을 안내해 드리겠습니다\.)?\s*/, '') : '');
   show($('moreAsk'), true);
   window.scrollTo(0, 0);
   $('moreLater').click();
@@ -798,7 +803,7 @@ $('moreSubmit').addEventListener('click', function() {
   show($('moreErr'), false);
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, extra: p }) })
     .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
-    .then(function() { extra = p; show($('more'), false); show($('moreDone'), true); $('sub').textContent = ''; window.scrollTo(0, 0); })
+    .then(function() { extra = p; show($('more'), false); show($('moreDone'), true); $('sub').textContent = ''; $('moreDoneNote').textContent = stepNote.replace(/^지원 의사를 확인했습니다\.\s*(서류 준비가 끝나면 진행 상황을 안내해 드리겠습니다\.)?\s*/, ''); window.scrollTo(0, 0); })
     .catch(function(e) {
       if (e && e.message === 'closed') { show($('more'), false); showClosed({ position: $('title').textContent }); return; }
       $('moreErr').textContent = '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.'; show($('moreErr'), true); xRefresh();
