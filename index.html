@@ -553,7 +553,8 @@ function refresh() {
     if (num) num.textContent = box.classList.contains('hidden') ? '' : (++n) + '. ';
   });
   var busy = Object.keys(pending).some(function(d) { return pending[d].some(function(p) { return p.state === 'up'; }); });
-  $('submit').textContent = declined ? '응답 보내고 마치기' : busy ? '파일 올리는 중…' : '보내기';
+  // 2026-11-26: 지원이면 사전 인터뷰가 남았음을 버튼에서 미리 알림 (이미 사전 인터뷰를 썼으면 그냥 보내기)
+  $('submit').textContent = declined ? '응답 보내고 마치기' : busy ? '파일 올리는 중…' : answers.intent === 'apply' && !(extra || {}).at ? '다음: 사전 인터뷰로 (1/2)' : '보내기';
   $('submit').disabled = busy || !visibleKeys().every(function(k) { return answers[k]; }) ||
     (visibleKeys().indexOf('start') >= 0 && answers.start === 'custom' && !$('startText').value.trim()) ||
     (visibleKeys().indexOf('desired') >= 0 && answers.desired === 'amount' && !$('desiredAmount').value) ||
