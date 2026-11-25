@@ -224,11 +224,10 @@
       <h2>감사합니다!</h2>
       <p id="doneText"></p>
       <div class="moreask hidden" id="moreAsk">
-        <h3 id="moreAskTitle">다음 단계: 사전 인터뷰 (약 4분)</h3>
-        <p id="moreAskText">고객사에 후보자님을 제대로 추천드리고, 처우 협상에서도 후보자님께 유리하게 말씀드리기 위해 꼭 필요한 단계입니다. 답변을 받은 뒤 추천서를 작성해 진행합니다. 대부분 눌러서 고르시면 됩니다.</p>
-        <button class="submit" id="moreGo" type="button">지금 답하기</button>
-        <button class="close" id="moreLater" type="button">나중에 할게요 (내일 문자로 링크를 한 번 보내 드려요)</button>
-        <button class="close" id="moreCall" type="button">설문 대신 10분 통화로 할게요</button>
+        <h3 id="moreAskTitle">지원 마지막 단계: 사전 인터뷰 (약 4분)</h3>
+        <p id="moreAskText"><b>사전 인터뷰까지 작성해 주셔야 지원이 완료됩니다.</b> 작성 전에는 고객사 추천을 진행하지 않습니다. 고객사에 후보자님을 제대로 추천드리고 처우 협상에서도 유리하게 말씀드리기 위해 꼭 필요한 단계이며, 대부분 눌러서 고르시면 됩니다.</p>
+        <button class="submit" id="moreGo" type="button">지금 작성하기</button>
+        <button class="close" id="moreLater" type="button">지금은 어려워요 — 내일 문자로 링크 받기</button>
       </div>
       <p class="note">선택을 바꾸고 싶으시면 메일의 버튼을 다시 눌러 주세요.</p>
       <button class="close" id="closeBtn">창 닫기</button>
@@ -236,6 +235,7 @@
 
     <!-- 사전 인터뷰 (지원 의사 회신 뒤 · 2026-11-22부터 추천 진행에 필요, 통화로 대신 가능) — 추천서 작성용, 🔒 답변은 고객사에 그대로 전달하지 않음 -->
     <div id="more" class="hidden">
+      <div class="moreask" id="moreStep" style="margin-top:0;"><h3>지원 마지막 단계 (2/2) · 사전 인터뷰</h3><p style="margin:0;">이 설문까지 보내 주셔야 <b>지원이 완료되고 바로 추천을 진행</b>합니다. 작성 전에는 추천이 진행되지 않습니다. 약 4분이면 끝나요.</p></div>
       <div class="lock">🔒 표시가 있는 질문의 답변은 <b>헤드헌터만 보며 고객사에 그대로 전달되지 않습니다.</b> 면접 일정과 처우 협상을 후보자님 상황에 맞춰 준비하는 데 씁니다. 정답이 있는 질문이 아니니 솔직하게 골라 주실수록 도움이 됩니다.</div>
 
       <div class="q" data-x="call">
@@ -379,12 +379,13 @@
 
       <button class="submit" id="moreSubmit" disabled>보내기</button>
       <p class="err hidden" id="moreErr"></p>
+      <button class="close" id="moreLater2" type="button" style="width:100%;margin-top:10px;">지금은 어려워요 — 내일 문자로 링크 받기 (작성 전에는 추천이 진행되지 않아요)</button>
       <p class="note">헤드헌터 강연호 이사에게만 전달됩니다.</p>
     </div>
 
     <div id="moreDone" class="msg hidden">
       <h2>감사합니다!</h2>
-      <p>보내 주신 내용은 추천서 작성과 연락에 반영하겠습니다. 이 창은 닫으셔도 됩니다.</p>
+      <p><b>지원이 완료되었습니다.</b> 보내 주신 내용으로 추천서를 작성해 진행하겠습니다. 이 창은 닫으셔도 됩니다.</p>
       <p class="note">고치고 싶으시면 같은 링크로 다시 들어오시면 됩니다.</p>
     </div>
   </div>
@@ -662,6 +663,8 @@ $('submit').addEventListener('click', function() {
     .then(function() {
       $('doneText').textContent = doneMessage() + (answers.intent === 'apply' ? '' : ' 이 창은 닫으셔도 됩니다.');
       show($('form'), false);
+      // 2026-11-26: 지원하기로 하면 감사 화면 대신 바로 사전 인터뷰로 (지원 마지막 단계 — 작성해야 지원 완료)
+      if (answers.intent === 'apply' && !extra.at) { openMore(); return; }
       show($('done'), true);
       showMoreAsk();
     })
@@ -761,24 +764,24 @@ function openMore() {
   $('xLimitText').value = extra.limit_text || '';
   $('sub').textContent = '사전 인터뷰 · 약 4분';
   show($('loading'), false); show($('form'), false); show($('done'), false); show($('more'), true);
+  show($('moreStep'), !extra.at);
   xRefresh();
   window.scrollTo(0, 0);
 }
 $('moreGo').addEventListener('click', openMore);
+$('moreLater2').addEventListener('click', function() {
+  show($('more'), false); show($('done'), true); $('sub').textContent = '';
+  $('doneText').textContent = '아직 지원이 완료되지 않았습니다.';
+  show($('moreAsk'), true);
+  window.scrollTo(0, 0);
+  $('moreLater').click();
+});
 $('moreLater').addEventListener('click', function() {
   $('moreLater').disabled = true;
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, later: true }) })
     .then(function(r) { if (!r.ok) throw new Error(r.status); })
-    .then(function() { $('moreAskText').textContent = '내일 문자로 링크를 보내 드릴게요. 답변을 받은 뒤 추천서를 작성해 진행하겠습니다.'; show($('moreGo'), false); show($('moreLater'), false); show($('moreCall'), false); })
+    .then(function() { $('moreAskText').textContent = '내일 오전 문자로 링크를 보내 드릴게요. 사전 인터뷰를 작성해 주셔야 지원이 완료되고 추천이 진행됩니다.'; show($('moreGo'), false); show($('moreLater'), false); })
     .catch(function() { $('moreLater').disabled = false; });
-});
-// 설문 대신 통화 (참여 의사로 봄 → 헤드헌터에게 알림, 다음 날 문자 예약은 취소)
-$('moreCall').addEventListener('click', function() {
-  $('moreCall').disabled = true;
-  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, callInstead: true }) })
-    .then(function(r) { if (!r.ok) throw new Error(r.status); })
-    .then(function() { $('moreAskText').textContent = '알겠습니다. 고르신 연락 시간에 맞춰 10분 정도 통화로 여쭙겠습니다. 편하실 때 위 버튼으로 직접 답하셔도 됩니다.'; show($('moreLater'), false); show($('moreCall'), false); })
-    .catch(function() { $('moreCall').disabled = false; });
 });
 $('moreSubmit').addEventListener('click', function() {
   var p = { call: xa.call, fast: xa.fast, status: xa.status, reason: xa.reason, raise: xa.raise, commute: xa.commute,
@@ -806,7 +809,7 @@ function showMoreAsk() {
   var on = answers.intent === 'apply';
   show($('moreAsk'), on);
   if (!on) return;
-  if (extra.at) { $('moreAskTitle').textContent = '사전 인터뷰 답변을 보내 주셨습니다'; $('moreAskText').textContent = '고칠 내용이 있으시면 아래 버튼으로 수정하실 수 있습니다.'; $('moreGo').textContent = '답변 고치기'; show($('moreLater'), false); show($('moreCall'), false); }
+  if (extra.at) { $('moreAskTitle').textContent = '사전 인터뷰 답변을 보내 주셨습니다'; $('moreAskText').textContent = '고칠 내용이 있으시면 아래 버튼으로 수정하실 수 있습니다.'; $('moreGo').textContent = '답변 고치기'; show($('moreLater'), false); }
 }
 
 // 오더가 마감된 링크: 지원서 대신 정중한 마감 안내
