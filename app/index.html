@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>searchFlow</title>
+<title>searchFlow-lite</title>
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="searchFlow">
+<meta name="apple-mobile-web-app-title" content="searchFlow-lite">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#34445e">
 <link rel="manifest" href="manifest.webmanifest">
@@ -81,7 +81,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 </style>
 </head>
 <body>
-<header><button id="back" hidden aria-label="뒤로">‹ 목록</button><h1 id="title">searchFlow</h1><button id="reload">새로고침</button></header>
+<header><button id="back" hidden aria-label="뒤로">‹ 목록</button><h1 id="title">searchFlow-lite</h1><button id="reload">새로고침</button></header>
 <main id="main"></main>
 <div id="toast" role="status"></div>
 <script>
@@ -624,7 +624,7 @@ function render() {
   const o = view && state && !cv ? state.orders.find(function(x) { return x.id === view; }) : null;
   if (view && !o && !cv) view = null;
   $('back').hidden = !o && !cv;
-  $('title').textContent = cv ? '후보자 찾기' : o ? o.title : 'searchFlow';
+  $('title').textContent = cv ? '후보자 찾기' : o ? o.title : 'searchFlow-lite';
   $('reload').hidden = !session;
   // 입력 중인 값은 다시 그려도 유지
   const keep = { goal: $('goal') && $('goal').value, hour: $('hour') && $('hour').value, upd: $('updText') && $('updText').value };
