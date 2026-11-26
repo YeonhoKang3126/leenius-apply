@@ -138,7 +138,9 @@ async function load() {
 async function loadMust(id) {
   try {
     // 2026-11-13부터 후보자는 order:<id>:cand:0~15 묶음에 나뉘어 있음 (sync.js) — 기기별로 같은 사람이 있으면 하나만
-    const rows = await rest('sf_sync?select=c:data->candidates&doc_key=like.' + encodeURIComponent('order:' + id + ':cand:*'));
+    // 2026-11-27: 기기 간 동기화가 Cloudflare로 옮겨져 Supabase에는 필수 요약(must:<오더>)만 새로 올라옴 — 없으면 예전 묶음
+    let rows = await rest('sf_sync?select=c:data->candidates&doc_key=eq.' + encodeURIComponent('must:' + id));
+    if (!rows || !rows.length) rows = await rest('sf_sync?select=c:data->candidates&doc_key=like.' + encodeURIComponent('order:' + id + ':cand:*'));
     const by = new Map();
     (rows || []).forEach(function(r) { (r.c || []).forEach(function(c) {
       if (!(c.detail && c.detail.verdict === '필수')) return;
